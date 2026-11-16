@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { normalizeUrl, type ItemWithCollections, type LinkPreview, type SavedMatch, type Uuid } from "@nodoteca/core";
 import { fetchPreview, findSaved, useGraph, useSaveItem, useUpdateItem } from "../lib/api.ts";
 import { useI18n } from "../lib/i18n.tsx";
+import { useOnline } from "../lib/offline.ts";
 import { CollectionPicker } from "./CollectionPicker.tsx";
 import { Dialog } from "./Dialog.tsx";
 
@@ -28,6 +29,7 @@ export function ItemDialog({ item, initial, onClose }: Props) {
   const save = useSaveItem();
   const update = useUpdateItem();
   const editing = !!item;
+  const online = useOnline();
 
   const [url, setUrl] = useState(item?.url ?? initial?.url ?? "");
   const [title, setTitle] = useState(item?.title ?? initial?.title ?? "");
@@ -109,7 +111,7 @@ export function ItemDialog({ item, initial, onClose }: Props) {
           <button type="button" className="btn btn--ghost" onClick={onClose}>
             {t("common.cancel")}
           </button>
-          <button className="btn btn--primary" disabled={busy || (!editing && !valid)}>
+          <button className="btn btn--primary" disabled={!online || busy || (!editing && !valid)}>
             {matches.length && !editing ? t("item.saveAnyway") : t("common.save")}
           </button>
         </>

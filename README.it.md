@@ -119,7 +119,7 @@ npm test               # test del core e del database
 - [x] **Fase 2 · App web (MVP):** accesso, salvataggio, più raccolte per link, navigazione, ricerca, anteprime
 - [x] **Fase 3 · Cattura veloce:** estensione Chrome, PWA installabile, menu "Condividi" di Android
 - [x] **Fase 4 · Importazione:** da Raindrop.io (CSV / HTML) e dai segnalibri del browser
-- [ ] **Fase 5 · Rifinitura:** export completo e backup (fatto), modalità offline
+- [x] **Fase 5 · Rifinitura:** export completo e backup, modalità offline (sola lettura)
 - [ ] **Fase 6 · Formato di importazione nativo:** un formato JSON semplice e documentato (raccolte per nome, più genitori, niente id) che tu o un LLM potete scrivere partendo da qualsiasi export, ad esempio per riorganizzare un export di Raindrop prima di importarlo
 - [ ] **Fase 7 · Classificazione intelligente:** raccolte suggerite in base a canzone, artista e film
 

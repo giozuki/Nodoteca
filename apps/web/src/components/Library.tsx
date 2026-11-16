@@ -4,6 +4,7 @@ import { descendants, type ItemWithCollections, type Uuid } from "@nodoteca/core
 import { useGraph, useItems, type ItemScope } from "../lib/api.ts";
 import { colorFor } from "../lib/colors.ts";
 import { useI18n } from "../lib/i18n.tsx";
+import { useOnline } from "../lib/offline.ts";
 import { CollectionDialog } from "./CollectionDialog.tsx";
 import { ItemCard } from "./ItemCard.tsx";
 import { ItemDialog } from "./ItemDialog.tsx";
@@ -43,6 +44,7 @@ export function Library({ view, onAdd }: { view: View; onAdd: (collectionIds: Uu
   }, [view, id, includeSub, graph, query]);
 
   const items = useItems(scope);
+  const online = useOnline();
 
   const title =
     view === "collection" ? (collection?.name ?? "") : view === "search" ? t("search.results", { query }) : view === "unfiled" ? t("nav.unfiled") : t("nav.all");
@@ -91,7 +93,7 @@ export function Library({ view, onAdd }: { view: View; onAdd: (collectionIds: Uu
               {t("collection.includeSub")}
             </label>
           )}
-          {collection && (
+          {collection && online && (
             <button className="btn btn--ghost" onClick={() => setEditingCollection(true)}>
               ✎ {t("collection.edit")}
             </button>
@@ -105,7 +107,7 @@ export function Library({ view, onAdd }: { view: View; onAdd: (collectionIds: Uu
       {items.data?.length === 0 && (
         <div className="empty">
           <p>{empty}</p>
-          {view !== "search" && (
+          {view !== "search" && online && (
             <button className="btn btn--primary" onClick={() => onAdd(id ? [id] : [])}>
               + {t("item.add")}
             </button>

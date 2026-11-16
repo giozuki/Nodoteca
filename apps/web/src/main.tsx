@@ -8,7 +8,8 @@ import "@fontsource-variable/instrument-sans";
 import "./styles.css";
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: true, retry: 1 } },
+  // networkMode "always": queries run even offline, so they can answer from the offline copy.
+  defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: true, retry: 1, networkMode: "always" } },
 });
 
 createRoot(document.getElementById("root")!).render(

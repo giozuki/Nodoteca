@@ -71,6 +71,8 @@ export const en = {
   "search.noResults": "Nothing found for “{query}”.",
 
   "library.empty": "Your library is empty. Save your first link!",
+  "offline.banner": "You're offline: this is your library as of {time}. Saving and editing will be back with the connection.",
+  "offline.noCopy": "You're offline and there's no saved copy of your library on this device yet.",
 
   "import.menu": "Import links",
   "import.title": "Import links",

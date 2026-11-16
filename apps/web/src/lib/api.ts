@@ -2,15 +2,22 @@ import { useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   buildGraph,
+  countsLocal,
+  findSavedLocal,
+  queryLocal,
   type Collection,
   type CollectionEdge,
   type ItemWithCollections,
   type LinkPreview,
   type SavedMatch,
+  type ItemScope,
   type SaveItemInput,
   type Uuid,
 } from "@nodoteca/core";
+import { scheduleSync, withOffline } from "./offline.ts";
 import { must, supabase } from "./supabase.ts";
+
+export type { ItemScope };
 
 // --- Queries ------------------------------------------------------------------
 
@@ -24,14 +31,22 @@ export const keys = {
 export function useCollections() {
   return useQuery({
     queryKey: keys.collections,
-    queryFn: async () => must(await supabase.from("collections").select("*").order("name")) as Collection[],
+    queryFn: () =>
+      withOffline(
+        async () => must(await supabase.from("collections").select("*").order("name")) as Collection[],
+        (d) => [...d.collections].sort((a, b) => a.name.localeCompare(b.name)),
+      ),
   });
 }
 
 export function useEdges() {
   return useQuery({
     queryKey: keys.edges,
-    queryFn: async () => must(await supabase.from("collection_edges").select("*")) as CollectionEdge[],
+    queryFn: () =>
+      withOffline(
+        async () => must(await supabase.from("collection_edges").select("*")) as CollectionEdge[],
+        (d) => d.edges,
+      ),
   });
 }
 
@@ -48,18 +63,16 @@ export function useGraph() {
 export function useCounts() {
   return useQuery({
     queryKey: keys.counts,
-    queryFn: async () => {
-      const rows = must(await supabase.rpc("collection_counts")) as { collection_id: Uuid; item_count: number }[];
-      return new Map(rows.map((r) => [r.collection_id, Number(r.item_count)]));
-    },
+    queryFn: () =>
+      withOffline(
+        async () => {
+          const rows = must(await supabase.rpc("collection_counts")) as { collection_id: Uuid; item_count: number }[];
+          return new Map(rows.map((r) => [r.collection_id, Number(r.item_count)]));
+        },
+        (d) => countsLocal(d.items),
+      ),
   });
 }
-
-export type ItemScope =
-  | { kind: "all" }
-  | { kind: "unfiled" }
-  | { kind: "collection"; ids: Uuid[] }
-  | { kind: "search"; query: string };
 
 const ITEM_COLUMNS = "*, item_collections(collection_id)";
 const PAGE = 500;
@@ -67,37 +80,42 @@ const PAGE = 500;
 export function useItems(scope: ItemScope) {
   return useQuery({
     queryKey: keys.items(scope),
-    queryFn: async () => {
-      if (scope.kind === "search") {
-        // Partial match on every word; the function already orders by relevance.
-        const res = await supabase.rpc("search_items", { p_query: scope.query }).select(ITEM_COLUMNS).limit(PAGE);
-        return must(res) as unknown as ItemWithCollections[];
-      }
-      let q;
-      switch (scope.kind) {
-        case "all":
-          q = supabase.from("items").select(ITEM_COLUMNS);
-          break;
-        case "unfiled":
-          // Anti-join: items with no membership row at all.
-          q = supabase.from("items").select(ITEM_COLUMNS).is("item_collections", null);
-          break;
-        case "collection":
-          if (scope.ids.length === 0) return [];
-          // Two embeds of the same relation: one (inner) filters, one returns every collection for the chips.
-          q = supabase
-            .from("items")
-            .select(`${ITEM_COLUMNS}, in_scope:item_collections!inner(collection_id)`)
-            .in("in_scope.collection_id", scope.ids);
-          break;
-      }
-      return must(await q.order("created_at", { ascending: false }).limit(PAGE)) as unknown as ItemWithCollections[];
-    },
+    queryFn: () => withOffline(() => fetchItems(scope), (d) => queryLocal(d, scope, PAGE)),
   });
 }
 
+async function fetchItems(scope: ItemScope): Promise<ItemWithCollections[]> {
+  if (scope.kind === "search") {
+    // Partial match on every word; the function already orders by relevance.
+    const res = await supabase.rpc("search_items", { p_query: scope.query }).select(ITEM_COLUMNS).limit(PAGE);
+    return must(res) as unknown as ItemWithCollections[];
+  }
+  let q;
+  switch (scope.kind) {
+    case "all":
+      q = supabase.from("items").select(ITEM_COLUMNS);
+      break;
+    case "unfiled":
+      // Anti-join: items with no membership row at all.
+      q = supabase.from("items").select(ITEM_COLUMNS).is("item_collections", null);
+      break;
+    case "collection":
+      if (scope.ids.length === 0) return [];
+      // Two embeds of the same relation: one (inner) filters, one returns every collection for the chips.
+      q = supabase
+        .from("items")
+        .select(`${ITEM_COLUMNS}, in_scope:item_collections!inner(collection_id)`)
+        .in("in_scope.collection_id", scope.ids);
+      break;
+  }
+  return must(await q.order("created_at", { ascending: false }).limit(PAGE)) as unknown as ItemWithCollections[];
+}
+
 export async function findSaved(url: string): Promise<SavedMatch[]> {
-  return must(await supabase.rpc("find_saved", { p_url: url })) as SavedMatch[];
+  return withOffline(
+    async () => must(await supabase.rpc("find_saved", { p_url: url })) as SavedMatch[],
+    (d) => findSavedLocal(d.items, url),
+  );
 }
 
 export async function fetchPreview(url: string): Promise<LinkPreview | null> {
@@ -110,7 +128,10 @@ export async function fetchPreview(url: string): Promise<LinkPreview | null> {
 /** Every write can change counts, lists and the graph: refresh everything (it's cheap). */
 function useInvalidateAll() {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries();
+  return () => {
+    scheduleSync();
+    return qc.invalidateQueries();
+  };
 }
 
 export function useSaveItem() {
@@ -207,6 +228,7 @@ export function useRealtimeSync(userId: string) {
     const refresh = () => {
       clearTimeout(timer);
       timer = setTimeout(() => qc.invalidateQueries(), 300);
+      scheduleSync();
     };
     const channel = supabase.channel(`sync:${userId}`);
     for (const table of SYNCED_TABLES) {

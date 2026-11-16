@@ -68,6 +68,8 @@ export const it: Messages = {
   "search.noResults": "Nessun risultato per “{query}”.",
 
   "library.empty": "La tua libreria è vuota. Salva il primo link!",
+  "offline.banner": "Sei offline: questa è la tua libreria aggiornata al {time}. Salvataggio e modifiche tornano con la connessione.",
+  "offline.noCopy": "Sei offline e su questo dispositivo non c'è ancora una copia della tua libreria.",
 
   "import.menu": "Importa link",
   "import.title": "Importa link",

@@ -4,6 +4,7 @@ import type { CollectionGraph, Uuid } from "@nodoteca/core";
 import { useCounts, useGraph } from "../lib/api.ts";
 import { colorFor } from "../lib/colors.ts";
 import { useI18n } from "../lib/i18n.tsx";
+import { useOnline } from "../lib/offline.ts";
 
 const EXPANDED_KEY = "nodoteca.expanded";
 const MAX_DEPTH = 32;
@@ -26,6 +27,7 @@ export function Sidebar({ onNewCollection, onNavigate }: Props) {
   const { graph, isLoading } = useGraph();
   const counts = useCounts().data;
   const [expanded, setExpanded] = useState(loadExpanded);
+  const online = useOnline();
 
   function toggle(id: Uuid) {
     setExpanded((prev) => {
@@ -56,7 +58,7 @@ export function Sidebar({ onNewCollection, onNavigate }: Props) {
 
       <div className="sidebar__heading">
         <span>{t("nav.collections")}</span>
-        <button className="icon-btn" onClick={onNewCollection} aria-label={t("collection.new")} title={t("collection.new")}>
+        <button className="icon-btn" disabled={!online} onClick={onNewCollection} aria-label={t("collection.new")} title={t("collection.new")}>
           +
         </button>
       </div>
