@@ -124,6 +124,8 @@ npm test               # core + database tests
 - [x] **Phase 6 · Native import format:** a simple, documented JSON format (collections by name, several parents, no ids) that you or an LLM can write from any export, e.g. to reorganize a Raindrop export before importing it
 - [ ] **Phase 7 · Smart filing:** collection suggestions from song, artist and movie metadata
 
+<sub>Not planned, just noted: what would need work [if Nodoteca ever opens to the public](docs/going-public.md).</sub>
+
 ## 📄 License
 
 [MIT](LICENSE)

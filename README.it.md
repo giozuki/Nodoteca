@@ -124,6 +124,8 @@ npm test               # test del core e del database
 - [x] **Fase 6 · Formato di importazione nativo:** un formato JSON semplice e documentato (raccolte per nome, più genitori, niente id) che tu o un LLM potete scrivere partendo da qualsiasi export, ad esempio per riorganizzare un export di Raindrop prima di importarlo
 - [ ] **Fase 7 · Classificazione intelligente:** raccolte suggerite in base a canzone, artista e film
 
+<sub>Non pianificato, solo annotato: cosa servirebbe [se un giorno Nodoteca aprisse al pubblico](docs/going-public.md) (in inglese).</sub>
+
 ## 📄 Licenza
 
 [MIT](LICENSE)
