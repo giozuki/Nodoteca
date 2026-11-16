@@ -113,7 +113,7 @@ npm test               # test del core e del database
 ## 🗺️ Roadmap
 
 - [x] **Fase 1 · Fondamenta:** monorepo, modello dati, Row Level Security, RPC
-- [ ] **Fase 2 · App web (MVP):** accesso, salvataggio, più raccolte per link, navigazione, ricerca, anteprime
+- [x] **Fase 2 · App web (MVP):** accesso, salvataggio, più raccolte per link, navigazione, ricerca, anteprime
 - [ ] **Fase 3 · Cattura veloce:** estensione Chrome, PWA installabile, menu "Condividi" di Android
 - [ ] **Fase 4 · Importazione:** da Raindrop.io (CSV / HTML) e dai segnalibri del browser
 - [ ] **Fase 5 · Rifinitura:** modalità offline, export completo, raccolte condivisibili
