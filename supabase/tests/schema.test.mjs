@@ -14,6 +14,7 @@ await db.exec(`
   insert into auth.users values ('${A}'), ('${B}');
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
   create role anon; create role authenticated;
+  create publication supabase_realtime;
   grant usage on schema auth, extensions, public to authenticated;
   grant execute on function auth.uid() to authenticated;
   grant references on auth.users to authenticated;
@@ -40,7 +41,7 @@ ok((await as(A, `select count(*)::int c from item_collections where item_id='${i
 await as(A, `select save_item('https://www.youtube.com/watch?v=abc', array['${music}']::uuid[])`);
 const fs = await as(A, `select * from find_saved('https://www.youtube.com/watch?v=abc')`);
 ok(fs.rows.length === 2, "duplicate URL allowed; find_saved returns both saves");
-ok((await as(A, `select count(*)::int c from items where search @@ plainto_tsquery('simple','edit')`)).rows[0].c === 1, "full-text search finds by title");
+ok((await as(A, `select count(*)::int c from search_items('edit')`)).rows[0].c === 1, "search finds by title");
 
 ok((await as(B, `select count(*)::int c from items`)).rows[0].c === 0, "RLS: user B sees none of A's items");
 ok((await as(B, `select count(*)::int c from collections`)).rows[0].c === 0, "RLS: user B sees none of A's collections");
@@ -58,3 +59,37 @@ for (const t of ["items", "collections", "item_collections", "collection_edges"]
 }
 try { await asAnon(`select save_item('https://x.y')`); ok(false, "anon cannot call save_item"); }
 catch (e) { ok(true, `anon cannot call save_item  -> ${e.message}`); }
+
+// App RPCs
+await as(A, `select set_item_collections('${item}', array['${music}','${genre}']::uuid[])`);
+const now = (await as(A, `select array_agg(collection_id order by collection_id) ids from item_collections where item_id='${item}'`)).rows[0].ids;
+ok(now.length === 2 && now.includes(music) && now.includes(genre), "set_item_collections replaces the whole set");
+const counts = (await as(A, `select * from collection_counts()`)).rows;
+ok(counts.find((r) => r.collection_id === music)?.item_count == 2, "collection_counts counts items per collection");
+ok((await as(B, `select * from collection_counts()`)).rows.length === 0, "collection_counts only sees own rows");
+await as(A, `select set_collection_parents('${movieZ}', array['${movies}']::uuid[])`);
+ok((await as(A, `select count(*)::int c from collection_edges where child_id='${movieZ}'`)).rows[0].c === 1, "set_collection_parents replaces parents");
+await fails(A, `select set_collection_parents('${movies}', array['${movieZ}']::uuid[])`, "set_collection_parents still blocks cycles");
+await as(B, `select set_item_collections('${item}', '{}'::uuid[])`);
+ok((await as(A, `select count(*)::int c from item_collections where item_id='${item}'`)).rows[0].c === 2, "B cannot clear A's item collections");
+try { await asAnon(`select collection_counts()`); ok(false, "anon cannot call collection_counts"); }
+catch (e) { ok(true, `anon cannot call collection_counts  -> ${e.message}`); }
+
+// Partial-match search
+const sid = (await as(A, `select id from save_item('https://www.anthropic.com/news', '{}'::uuid[], 'Anthropic news', null, 'Read later 100%')`)).rows[0].id;
+const hits = async (q, uid = A) => {
+  await db.exec(`reset role; select set_config('test.uid','${uid}',false); set role authenticated;`);
+  return (await db.query("select id from search_items($1)", [q])).rows.map((r) => r.id);
+};
+ok((await hits("Anthr")).includes(sid), "search: prefix 'Anthr' matches 'Anthropic'");
+ok((await hits("thropic")).includes(sid), "search: infix 'thropic' matches");
+ok((await hits("ANTHROPIC")).includes(sid), "search: case-insensitive");
+ok((await hits("news anthr")).includes(sid), "search: several words, any order");
+ok(!(await hits("anthr zzz")).includes(sid), "search: every word must match");
+ok((await hits("100%")).includes(sid) && !(await hits("1_0")).includes(sid), "search: % and _ are literal");
+ok((await hits("anthropic.com")).includes(sid), "search: matches the URL");
+ok((await hits("")).length === 0 && (await hits("   ")).length === 0, "search: empty query returns nothing");
+ok((await hits("Anthr", B)).length === 0, "search: RLS, B finds none of A's items");
+await as(A, `select save_item('https://example.com/a', '{}'::uuid[], 'Unrelated', null, 'mentions anthropic in the note')`);
+const ranked = await hits("anthropic");
+ok(ranked[0] === sid && ranked.length === 2, "search: title matches come before note matches");

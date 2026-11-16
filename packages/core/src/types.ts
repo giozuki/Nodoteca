@@ -80,3 +80,18 @@ export interface SavedMatch {
   created_at: Timestamp;
   collection_ids: Uuid[];
 }
+
+/** What the `link-preview` Edge Function returns. Every field but `url` is optional. */
+export interface LinkPreview {
+  url: string;
+  title?: string | null;
+  description?: string | null;
+  thumbnail_url?: string | null;
+  site_name?: string | null;
+  metadata?: ItemMetadata;
+}
+
+/** An item together with the ids of the collections it is filed in. */
+export interface ItemWithCollections extends Item {
+  item_collections: { collection_id: Uuid }[];
+}

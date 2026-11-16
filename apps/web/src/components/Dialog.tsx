@@ -1,0 +1,53 @@
+import { useEffect, useRef, type FormEvent, type ReactNode } from "react";
+import { useI18n } from "../lib/i18n.tsx";
+
+interface Props {
+  title: string;
+  onClose: () => void;
+  onSubmit?: (e: FormEvent<HTMLFormElement>) => void;
+  children: ReactNode;
+  footer?: ReactNode;
+}
+
+/** Native <dialog> as a modal: focus trap, Esc to close and backdrop come for free. */
+export function Dialog({ title, onClose, onSubmit, children, footer }: Props) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const { t } = useI18n();
+
+  useEffect(() => {
+    const el = ref.current;
+    if (el && !el.open) el.showModal();
+    return () => el?.close();
+  }, []);
+
+  return (
+    <dialog
+      ref={ref}
+      className="dialog"
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === ref.current) onClose(); // click on the backdrop
+      }}
+    >
+      <form
+        className="dialog__panel"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit?.(e);
+        }}
+      >
+        <header className="dialog__header">
+          <h2>{title}</h2>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label={t("common.close")}>
+            ✕
+          </button>
+        </header>
+        <div className="dialog__body">{children}</div>
+        {footer && <footer className="dialog__footer">{footer}</footer>}
+      </form>
+    </dialog>
+  );
+}

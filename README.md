@@ -96,9 +96,13 @@ npm install
 npx supabase login
 npx supabase link --project-ref <your-project-ref>
 npm run db:push
+npm run functions:deploy   # link previews
 
 # Client config
 cp .env.example .env   # then fill in URL and publishable key
+
+npm run dev            # http://localhost:3000
+npm test               # core + database tests
 ```
 
 > The **publishable key** is meant to be public, and Row Level Security is what

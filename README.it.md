@@ -96,9 +96,13 @@ npm install
 npx supabase login
 npx supabase link --project-ref <id-del-progetto>
 npm run db:push
+npm run functions:deploy   # anteprime dei link
 
 # Configurazione del client
 cp .env.example .env   # poi inserisci URL e publishable key
+
+npm run dev            # http://localhost:3000
+npm test               # test del core e del database
 ```
 
 > La **publishable key** è pensata per essere pubblica: a proteggere i dati è la Row

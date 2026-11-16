@@ -1,5 +1,5 @@
-import { en, type MessageKey, type Messages } from "./en.js";
-import { it } from "./it.js";
+import { en, type MessageKey, type Messages } from "./en.ts";
+import { it } from "./it.ts";
 
 export type { MessageKey, Messages };
 

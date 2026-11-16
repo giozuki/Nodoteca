@@ -71,9 +71,26 @@ erDiagram
 |---|---|
 | `save_item(p_url, p_collection_ids[], ...)` | Inserts an item and files it in several collections in one round trip. |
 | `find_saved(p_url)` | Returns earlier saves of the same URL and the collections they are in. |
+| `set_item_collections(p_item_id, p_collection_ids[])` | Replaces the whole set of collections of an item, atomically. |
+| `set_collection_parents(p_collection_id, p_parent_ids[])` | Replaces the parents of a collection; the cycle trigger still applies. |
+| `collection_counts()` | Number of items directly inside each collection, for the sidebar. |
 
 URLs are normalized on the client (`normalizeUrl` in `packages/core`) before
-both calls, so `youtu.be/x?si=…` and `youtube.com/watch?v=x` match.
+`save_item` and `find_saved`, so `youtu.be/x?si=…` and `youtube.com/watch?v=x` match.
+
+## Link previews
+
+Browsers cannot read other sites' HTML, so the `link-preview` Edge Function
+(`supabase/functions/link-preview`) does it: YouTube through oEmbed, any other
+page through its OpenGraph / `<title>` tags. It only answers signed-in users,
+blocks private and loopback addresses (also after redirects), reads at most
+512 KB per page and never makes a save fail: no preview just means no thumbnail.
+
+## Realtime sync
+
+All four tables are in the `supabase_realtime` publication. The web app listens
+for any change and refetches, so an edit on the phone shows up on the laptop
+within a second. RLS applies to realtime too.
 
 ## Hosting
 

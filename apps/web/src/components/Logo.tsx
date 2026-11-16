@@ -1,0 +1,16 @@
+/** The Nodoteca mark: one item (gold) connected to three collections. */
+export function Logo({ size = 28 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" className="logo">
+      <g strokeWidth="3.5" strokeLinecap="round" fill="none">
+        <path d="M24 32 C 34 32, 36 18, 46 18" stroke="#8E7BFF" />
+        <path d="M24 32 L 47 32" stroke="#3DD6B5" />
+        <path d="M24 32 C 34 32, 36 46, 46 46" stroke="#FF7A59" />
+      </g>
+      <circle cx="47" cy="18" r="5" fill="#8E7BFF" />
+      <circle cx="49" cy="32" r="5" fill="#3DD6B5" />
+      <circle cx="47" cy="46" r="5" fill="#FF7A59" />
+      <rect x="11" y="25" width="16" height="14" rx="4" fill="#F2C46D" />
+    </svg>
+  );
+}
