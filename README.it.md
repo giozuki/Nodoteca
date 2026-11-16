@@ -36,10 +36,10 @@ Nodoteca tratta ogni link come un **nodo** che puoi collegare a quante raccolte
 vuoi. Anche le raccolte sono nodi, quindi possono avere più di un genitore.
 
 ```
-            ┌──▶ Genere X ──▶ Musica
-  🎬 video ─┼──▶ Artista Y ─▶ Musica
-            └──▶ Film Z ────┬▶ Film
-                            └▶ Colonne sonore
+          ┌──▶ Genere X ────▶ Musica
+  video ──┼──▶ Artista Y ───▶ Musica
+          └──▶ Film Z ─────┬▶ Film
+                           └▶ Colonne sonore
 ```
 
 ## ✨ Funzionalità

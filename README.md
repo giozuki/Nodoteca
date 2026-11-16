@@ -36,10 +36,10 @@ collections as you like. Collections are nodes too, so they can have more than
 one parent.
 
 ```
-            ┌──▶ Genre X ──▶ Music
-  🎬 video ─┼──▶ Artist Y ─▶ Music
-            └──▶ Movie Z ──┬▶ Movies
-                           └▶ Soundtracks
+          ┌──▶ Genre X ────▶ Music
+  video ──┼──▶ Artist Y ───▶ Music
+          └──▶ Movie Z ───┬▶ Movies
+                          └▶ Soundtracks
 ```
 
 ## ✨ Features
