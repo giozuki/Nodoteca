@@ -39,7 +39,7 @@ vuoi. Anche le raccolte sono nodi, quindi possono avere più di un genitore.
           ┌──▶ Genere X ────▶ Musica
   video ──┼──▶ Artista Y ───▶ Musica
           └──▶ Film Z ─────┬▶ Film
-                           └▶ Colonne sonore
+                            └▶ Colonne sonore
 ```
 
 ## ✨ Funzionalità

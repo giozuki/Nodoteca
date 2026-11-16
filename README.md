@@ -39,7 +39,7 @@ one parent.
           ┌──▶ Genre X ────▶ Music
   video ──┼──▶ Artist Y ───▶ Music
           └──▶ Movie Z ───┬▶ Movies
-                          └▶ Soundtracks
+                           └▶ Soundtracks
 ```
 
 ## ✨ Features
