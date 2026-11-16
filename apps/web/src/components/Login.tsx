@@ -7,8 +7,8 @@ import { ThemeSelect } from "./ThemeSelect.tsx";
 
 const PENDING_KEY = "nodoteca.pendingEmail";
 
-/** The code needs {{ .Token }} in the email template, which needs custom SMTP. Off until then. */
-const CODE_ENABLED = import.meta.env.VITE_AUTH_CODE === "true";
+/** The code needs {{ .Token }} in the email template, which needs custom SMTP. */
+export const CODE_ENABLED = import.meta.env.VITE_AUTH_CODE === "true";
 
 function loadPending(): string {
   try {

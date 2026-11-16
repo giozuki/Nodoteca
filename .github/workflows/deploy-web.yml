@@ -40,6 +40,8 @@ jobs:
           # Public by design (they ship inside the app); data is protected by RLS.
           # Forks: set the repository variables SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY.
           VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL || 'https://wutylntjycqyfzectals.supabase.co' }}
+          # The email template includes {{ .Token }} (custom SMTP is set up).
+          VITE_AUTH_CODE: "true"
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_YXduBXAMQEmCSf-oU37U7Q_GjAy_Jxn' }}
       - name: SPA fallback
         # GitHub Pages has no rewrites: serve the app for every unknown path (/c/…, /share…).

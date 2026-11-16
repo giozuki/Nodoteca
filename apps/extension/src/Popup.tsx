@@ -5,7 +5,7 @@ import { fetchPreview, findSaved, useGraph, useSaveItem } from "@web/lib/api.ts"
 import { useI18n } from "@web/lib/i18n.tsx";
 import { supabase } from "@web/lib/supabase.ts";
 import { CollectionPicker } from "@web/components/CollectionPicker.tsx";
-import { Login } from "@web/components/Login.tsx";
+import { CODE_ENABLED, Login } from "@web/components/Login.tsx";
 import { Logo } from "@web/components/Logo.tsx";
 import { HANDOFF_KEY } from "./handoff.ts";
 
@@ -56,7 +56,9 @@ export function Popup() {
 function ExtensionLogin() {
   const { t } = useI18n();
   const redirectTo = `${APP_URL}connect-extension.html?ext=${chrome.runtime.id}`;
-  return <Login compact redirectTo={redirectTo} sentMessage={(email) => t("auth.extCheckInbox", { email })} />;
+  // With the code on, the default "check your inbox, type the code or click the link" fits as is.
+  const sentMessage = CODE_ENABLED ? undefined : (email: string) => t("auth.extCheckInbox", { email });
+  return <Login compact redirectTo={redirectTo} sentMessage={sentMessage} />;
 }
 
 function SaveCurrentTab() {
