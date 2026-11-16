@@ -237,12 +237,25 @@ h1, h2 { margin: 0; line-height: 1.2; }
 .sidebar__empty { padding: 4px 10px; margin: 0; }
 
 .tree, .tree ul { list-style: none; margin: 0; padding: 0; }
-.tree__row { display: flex; align-items: center; padding-left: calc(var(--depth) * 14px); }
+.tree__row { display: flex; align-items: center; }
 .tree__toggle {
-  width: 20px; height: 28px; flex: none; display: grid; place-items: center;
-  border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 11px; transition: transform .15s;
+  width: 26px; height: 32px; flex: none; display: grid; place-items: center; padding: 0;
+  border: 0; border-radius: 7px; background: none; color: var(--muted); cursor: pointer;
 }
-.tree__toggle.is-open { transform: rotate(90deg); }
+.tree__toggle svg { transition: transform .15s; }
+button.tree__toggle:hover { color: var(--text); background: var(--surface-2); }
+.tree__toggle.is-open svg { transform: rotate(90deg); }
+
+/* Sub-collections hang from a guide line under their parent's arrow; the
+   line turns accent-coloured for the group that holds the open collection. */
+.tree ul[role="group"] {
+  margin-left: 12px; padding-left: 6px;
+  border-left: 2px solid var(--border);
+}
+.tree ul[role="group"]:has(> li > .tree__row .nav-link.is-active) {
+  border-left-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+.tree li[aria-expanded="true"] > .tree__row .nav-link__label { font-weight: 600; }
 
 /* --- Library ----------------------------------------------------------------- */
 

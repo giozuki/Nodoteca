@@ -105,10 +105,12 @@ function TreeNode({ id, depth, graph, counts, expanded, onToggle, onNavigate }: 
 
   return (
     <li role="treeitem" aria-expanded={children.length ? isOpen : undefined}>
-      <div className="tree__row" style={{ "--depth": depth } as React.CSSProperties}>
+      <div className="tree__row">
         {children.length > 0 ? (
           <button className={`tree__toggle ${isOpen ? "is-open" : ""}`} onClick={() => onToggle(id)} aria-label={c.name}>
-            ▸
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         ) : (
           <span className="tree__toggle" />
