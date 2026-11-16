@@ -6,3 +6,4 @@ export * from "./share.ts";
 export * from "./import.ts";
 export * from "./export.ts";
 export * from "./local.ts";
+export * from "./native.ts";

@@ -49,7 +49,7 @@ test("JSON round trip: re-import rebuilds the same graph", () => {
 });
 
 test("a JSON that isn't a Nodoteca backup is rejected", () => {
-  assert.throws(() => parseImportFileFull('{"hello": 1}'), /not-nodoteca-export/);
+  assert.throws(() => parseImportFileFull('{"hello": 1}'), /unknown-format/);
 });
 
 test("bookmarks HTML unfolds the graph and escapes text", () => {

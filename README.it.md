@@ -84,6 +84,7 @@ Nodoteca/
 ```
 
 Dettagli sul modello dati e sulle scelte di progetto in [docs/architecture.md](docs/architecture.md) (in inglese).
+Per importare i tuoi link in un formato semplice (scritto a mano, da uno script o da un LLM) vedi [docs/import-format.md](docs/import-format.md).
 
 ## 🚀 Per iniziare
 
@@ -120,7 +121,7 @@ npm test               # test del core e del database
 - [x] **Fase 3 · Cattura veloce:** estensione Chrome, PWA installabile, menu "Condividi" di Android
 - [x] **Fase 4 · Importazione:** da Raindrop.io (CSV / HTML) e dai segnalibri del browser
 - [x] **Fase 5 · Rifinitura:** export completo e backup, modalità offline (sola lettura)
-- [ ] **Fase 6 · Formato di importazione nativo:** un formato JSON semplice e documentato (raccolte per nome, più genitori, niente id) che tu o un LLM potete scrivere partendo da qualsiasi export, ad esempio per riorganizzare un export di Raindrop prima di importarlo
+- [x] **Fase 6 · Formato di importazione nativo:** un formato JSON semplice e documentato (raccolte per nome, più genitori, niente id) che tu o un LLM potete scrivere partendo da qualsiasi export, ad esempio per riorganizzare un export di Raindrop prima di importarlo
 - [ ] **Fase 7 · Classificazione intelligente:** raccolte suggerite in base a canzone, artista e film
 
 ## 📄 Licenza

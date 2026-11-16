@@ -1,4 +1,5 @@
 import { EXPORT_FORMAT, type NodotecaExport } from "./export.ts";
+import { ImportFormatError, parseNativeJson, type CollectionDetails, type ImportWarning } from "./native.ts";
 import { normalizeUrl } from "./url.ts";
 
 /** One link read from an export file, before it becomes an item. */
@@ -24,8 +25,12 @@ export interface ImportEntry {
 /** A parsed file: links, plus collection parent links when the file has a graph. */
 export interface ParsedImport {
   entries: ImportEntry[];
-  /** [parent name, child name] */
+  /** [parent name, child name]; [x, x] only makes sure x exists */
   edges: [string, string][];
+  /** Color / description per collection key, when the file has them. */
+  details: Map<string, CollectionDetails>;
+  /** Odd things found in the file that didn't stop the import. */
+  warnings: ImportWarning[];
 }
 
 // --- CSV (RFC 4180) -------------------------------------------------------------
@@ -189,12 +194,19 @@ function validDate(s: string | null): string | null {
 
 // --- Nodoteca JSON backup --------------------------------------------------------
 
-export function parseNodotecaJson(text: string): ParsedImport {
-  const data = JSON.parse(text) as Partial<NodotecaExport>;
+export function parseNodotecaJson(input: string | unknown): ParsedImport {
+  const data = (typeof input === "string" ? JSON.parse(input) : input) as Partial<NodotecaExport>;
   if (data.format !== EXPORT_FORMAT || !Array.isArray(data.items) || !Array.isArray(data.collections)) {
     throw new Error("not-nodoteca-export");
   }
   const names = new Map(data.collections.map((c) => [c.id, c.name]));
+  const details = new Map<string, CollectionDetails>();
+  for (const c of data.collections) {
+    const d: CollectionDetails = {};
+    if (c.color) d.color = c.color;
+    if (c.description) d.description = c.description;
+    if (d.color || d.description) details.set(collectionKey(c.name), d);
+  }
   const edges: [string, string][] = [];
   for (const c of data.collections) {
     for (const p of c.parents ?? []) {
@@ -224,16 +236,27 @@ export function parseNodotecaJson(text: string): ParsedImport {
   for (const c of data.collections) {
     if (!entries.some((e) => e.collections?.includes(c.name))) edges.push([c.name, c.name]);
   }
-  return { entries, edges };
+  return { entries, edges, details, warnings: [] };
 }
 
 /** Picks the right parser from the file content. */
 export function parseImportFileFull(text: string): ParsedImport {
-  const trimmed = text.trimStart();
-  if (trimmed.startsWith("{")) return parseNodotecaJson(trimmed);
+  const trimmed = text.replace(/^﻿/, "").trimStart();
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    let data: unknown;
+    try {
+      data = JSON.parse(trimmed);
+    } catch (err) {
+      throw new ImportFormatError("invalid-json", err instanceof Error ? err.message : undefined);
+    }
+    const format = (data as { format?: unknown } | null)?.format;
+    if (format === EXPORT_FORMAT) return parseNodotecaJson(data);
+    return parseNativeJson(data); // throws "unknown-format" for any other JSON
+  }
+  const empty = { edges: [] as [string, string][], details: new Map<string, CollectionDetails>(), warnings: [] as ImportWarning[] };
   const head = text.slice(0, 2000).toLowerCase();
-  if (head.includes("<!doctype netscape-bookmark-file") || head.includes("<dl")) return { entries: parseBookmarksHtml(text), edges: [] };
-  return { entries: parseRaindropCsv(text), edges: [] };
+  if (head.includes("<!doctype netscape-bookmark-file") || head.includes("<dl")) return { entries: parseBookmarksHtml(text), ...empty };
+  return { entries: parseRaindropCsv(text), ...empty };
 }
 
 export function parseImportFile(text: string): ImportEntry[] {
@@ -256,6 +279,8 @@ export interface ImportOptions {
   mergeSameNames?: boolean;
   /** Extra [parent name, child name] links (from a Nodoteca backup). [x, x] just creates x. */
   edges?: readonly [string, string][];
+  /** Color / description for collections created by the import. */
+  details?: ReadonlyMap<string, CollectionDetails>;
 }
 
 export interface PlannedItem {
@@ -279,6 +304,8 @@ export interface ImportPlan {
   items: PlannedItem[];
   skippedExisting: number;
   skippedDuplicatesInFile: number;
+  /** collection key -> color / description */
+  details: ReadonlyMap<string, CollectionDetails>;
 }
 
 export interface SharedFolderName {
@@ -392,5 +419,5 @@ export function buildImportPlan(entries: readonly ImportEntry[], options: Import
     if (parent !== child) edges.set(JSON.stringify([parent, child]), [parent, child]);
   }
 
-  return { collections, edges: [...edges.values()], items, skippedExisting, skippedDuplicatesInFile };
+  return { collections, edges: [...edges.values()], items, skippedExisting, skippedDuplicatesInFile, details: options.details ?? new Map() };
 }

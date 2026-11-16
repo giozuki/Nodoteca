@@ -3,11 +3,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   buildImportPlan,
   collectionKey,
+  ImportFormatError,
   normalizeUrl,
   parseImportFileFull,
   sharedFolderNames,
   tagCounts,
+  type CollectionDetails,
   type ImportEntry,
+  type ImportWarning,
 } from "@nodoteca/core";
 import { useCollections } from "../lib/api.ts";
 import { useI18n } from "../lib/i18n.tsx";
@@ -16,7 +19,15 @@ import { Dialog } from "./Dialog.tsx";
 
 type Step =
   | { kind: "pick"; error?: string }
-  | { kind: "review"; entries: ImportEntry[]; edges: [string, string][]; existingUrls: Set<string>; fileName: string }
+  | {
+      kind: "review";
+      entries: ImportEntry[];
+      edges: [string, string][];
+      details: Map<string, CollectionDetails>;
+      warnings: ImportWarning[];
+      existingUrls: Set<string>;
+      fileName: string;
+    }
   | { kind: "running"; done: number; total: number }
   | { kind: "done"; result: ImportResult }
   | { kind: "failed" };
@@ -27,10 +38,13 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
 
   async function readFile(file: File) {
     try {
-      const { entries, edges } = parseImportFileFull(await file.text());
+      const { entries, edges, details, warnings } = parseImportFileFull(await file.text());
       if (!entries.length && !edges.length) return setStep({ kind: "pick", error: t("import.badFile") });
-      setStep({ kind: "review", entries, edges, existingUrls: await fetchExistingUrls(), fileName: file.name });
-    } catch {
+      setStep({ kind: "review", entries, edges, details, warnings, existingUrls: await fetchExistingUrls(), fileName: file.name });
+    } catch (err) {
+      if (err instanceof ImportFormatError) {
+        return setStep({ kind: "pick", error: t(`import.error.${err.code}`, { detail: err.detail ?? "" }) });
+      }
       setStep({ kind: "pick", error: t("import.badFile") });
     }
   }
@@ -46,6 +60,7 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
             <li>{t("import.howRaindrop")}</li>
             <li>{t("import.howBrowser")}</li>
             <li>{t("import.howBackup")}</li>
+            <li>{t("import.howNative")}</li>
           </ul>
           <label className="btn btn--primary import__file">
             {t("import.choose")}
@@ -66,6 +81,8 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
         <Review
           entries={step.entries}
           edges={step.edges}
+          details={step.details}
+          warnings={step.warnings}
           existingUrls={step.existingUrls}
           fileName={step.fileName}
           onCancel={onClose}
@@ -112,13 +129,15 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
 interface ReviewProps {
   entries: ImportEntry[];
   edges: [string, string][];
+  details: Map<string, CollectionDetails>;
+  warnings: ImportWarning[];
   existingUrls: Set<string>;
   fileName: string;
   onCancel: () => void;
   onStart: (run: (progress: (done: number, total: number) => void) => Promise<ImportResult>) => void;
 }
 
-function Review({ entries, edges, existingUrls, fileName, onCancel, onStart }: ReviewProps) {
+function Review({ entries, edges, details, warnings, existingUrls, fileName, onCancel, onStart }: ReviewProps) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const existingCollections = useCollections().data ?? [];
@@ -129,8 +148,8 @@ function Review({ entries, edges, existingUrls, fileName, onCancel, onStart }: R
   const [chosenTags, setChosenTags] = useState<Set<string>>(new Set());
 
   const plan = useMemo(
-    () => buildImportPlan(entries, { tagsAsCollections: chosenTags, existingUrls, skipExisting, mergeSameNames: merge, edges }),
-    [entries, edges, chosenTags, existingUrls, skipExisting, merge],
+    () => buildImportPlan(entries, { tagsAsCollections: chosenTags, existingUrls, skipExisting, mergeSameNames: merge, edges, details }),
+    [entries, edges, details, chosenTags, existingUrls, skipExisting, merge],
   );
   const existingKeys = new Set(existingCollections.map((c) => collectionKey(c.name)));
   const newCollections = [...plan.collections.keys()].filter((k) => !existingKeys.has(k)).length;
@@ -170,6 +189,8 @@ function Review({ entries, edges, existingUrls, fileName, onCancel, onStart }: R
         {plan.skippedDuplicatesInFile > 0 && <li className="muted">{t("import.dupInFile", { count: plan.skippedDuplicatesInFile })}</li>}
         <li>{t("import.collections", { count: plan.collections.size, new: newCollections })}</li>
       </ul>
+
+      {warnings.length > 0 && <Warnings warnings={warnings} />}
 
       {alreadyHave > 0 && (
         <label className="toggle">
@@ -237,5 +258,43 @@ function Review({ entries, edges, existingUrls, fileName, onCancel, onStart }: R
         </button>
       </div>
     </div>
+  );
+}
+
+const SHOWN_WARNINGS = 8;
+
+/** Problems found in the file that didn't stop the import. */
+function Warnings({ warnings }: { warnings: ImportWarning[] }) {
+  const { t } = useI18n();
+  const text = (w: ImportWarning): string => {
+    switch (w.code) {
+      case "link-skipped":
+        return t(`import.warn.link-skipped.${w.reason}`, { n: w.index + 1 });
+      case "bad-date":
+        return t("import.warn.bad-date", { n: w.index + 1, value: w.value });
+      case "undeclared-collection":
+        return t("import.warn.undeclared-collection", { name: w.name });
+      case "cycle-removed":
+        return t("import.warn.cycle-removed", { parent: w.parent, child: w.child });
+      case "self-parent":
+        return t("import.warn.self-parent", { name: w.name });
+      case "bad-color":
+        return t("import.warn.bad-color", { name: w.name, value: w.value });
+      case "duplicate-collection":
+        return t("import.warn.duplicate-collection", { name: w.name });
+    }
+  };
+  return (
+    <fieldset className="import__group import__warnings">
+      <legend>⚠ {t("import.warnings", { count: warnings.length })}</legend>
+      <ul className="small">
+        {warnings.slice(0, SHOWN_WARNINGS).map((w, i) => (
+          <li key={i}>{text(w)}</li>
+        ))}
+      </ul>
+      {warnings.length > SHOWN_WARNINGS && (
+        <small className="muted">{t("import.moreWarnings", { count: warnings.length - SHOWN_WARNINGS })}</small>
+      )}
+    </fieldset>
   );
 }

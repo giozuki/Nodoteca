@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/giozuki/Nodoteca/blob/main/docs/nodoteca-import.schema.json",
+  "title": "Nodoteca import file",
+  "description": "Links and collections to import into Nodoteca. Collections are referred to by name. See docs/import-format.md.",
+  "type": "object",
+  "required": ["format", "links"],
+  "properties": {
+    "format": { "const": "nodoteca-import" },
+    "version": { "const": 1 },
+    "collections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "parents": {
+            "description": "Names of the collections this one sits inside. Several are allowed.",
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 120 }
+          },
+          "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+          "description": { "type": "string", "maxLength": 2000 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["url"],
+        "properties": {
+          "url": { "type": "string", "pattern": "^https?://\\S+$", "maxLength": 8192 },
+          "title": { "type": "string", "maxLength": 1000 },
+          "note": { "type": "string", "maxLength": 20000 },
+          "description": { "type": "string", "maxLength": 5000 },
+          "thumbnail_url": { "type": "string", "pattern": "^https?://", "maxLength": 8192 },
+          "created_at": { "type": "string", "description": "ISO 8601 date or date-time." },
+          "collections": {
+            "description": "Names of the collections the link goes into. Several are allowed.",
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 120 }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

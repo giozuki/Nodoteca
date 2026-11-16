@@ -84,6 +84,7 @@ Nodoteca/
 ```
 
 More on the data model and design choices in [docs/architecture.md](docs/architecture.md).
+To import links in a simple format you can write by hand, with a script or with an LLM, see [docs/import-format.md](docs/import-format.md).
 
 ## 🚀 Getting started
 
@@ -120,7 +121,7 @@ npm test               # core + database tests
 - [x] **Phase 3 · Quick capture:** Chrome extension, installable PWA, Android share sheet
 - [x] **Phase 4 · Import:** from Raindrop.io (CSV / HTML) and browser bookmarks
 - [x] **Phase 5 · Polish:** full export and backup, offline mode (read-only)
-- [ ] **Phase 6 · Native import format:** a simple, documented JSON format (collections by name, several parents, no ids) that you or an LLM can write from any export, e.g. to reorganize a Raindrop export before importing it
+- [x] **Phase 6 · Native import format:** a simple, documented JSON format (collections by name, several parents, no ids) that you or an LLM can write from any export, e.g. to reorganize a Raindrop export before importing it
 - [ ] **Phase 7 · Smart filing:** collection suggestions from song, artist and movie metadata
 
 ## 📄 License

@@ -375,3 +375,14 @@ h1, h2 { margin: 0; line-height: 1.2; }
   margin: 0 0 18px; padding: 10px 14px; border-radius: var(--radius-sm);
   background: var(--warning-bg); color: var(--warning-text); font-size: 14px;
 }
+
+/* Long collection names shrink with an ellipsis instead of pushing the counts out
+   (flex items don't shrink below their text unless min-width is 0). */
+.nav-link__label { min-width: 0; flex: 0 1 auto; }
+.nav-link .count, .multi-parent, .dot { flex: none; }
+.tree__row { min-width: 0; }
+.sidebar { overflow-x: hidden; }
+
+.import__warnings { border-color: color-mix(in srgb, var(--warning-text) 40%, var(--border)); background: var(--warning-bg); }
+.import__warnings legend { color: var(--warning-text); }
+.import__warnings ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
