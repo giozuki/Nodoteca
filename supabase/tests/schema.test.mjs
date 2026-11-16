@@ -15,6 +15,14 @@ await db.exec(`
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
   create role anon; create role authenticated;
   create publication supabase_realtime;
+  -- minimal stand-in for Supabase Storage
+  create schema storage;
+  create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
+  create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text);
+  create function storage.foldername(name text) returns text[] language sql immutable as $$ select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1] $$;
+  alter table storage.objects enable row level security;
+  grant usage on schema storage to authenticated;
+  grant select, insert, update, delete on storage.objects to authenticated;
   grant usage on schema auth, extensions, public to authenticated;
   grant execute on function auth.uid() to authenticated;
   grant references on auth.users to authenticated;
@@ -93,3 +101,12 @@ ok((await hits("Anthr", B)).length === 0, "search: RLS, B finds none of A's item
 await as(A, `select save_item('https://example.com/a', '{}'::uuid[], 'Unrelated', null, 'mentions anthropic in the note')`);
 const ranked = await hits("anthropic");
 ok(ranked[0] === sid && ranked.length === 2, "search: title matches come before note matches");
+
+// Thumbnail storage
+await db.exec("reset role");
+ok((await db.query("select public from storage.buckets where id = 'thumbnails'")).rows[0]?.public === true, "thumbnails bucket exists and is public");
+await as(A, `insert into storage.objects (bucket_id, name) values ('thumbnails', '${A}/abc.jpg')`);
+ok(true, "storage: A can upload into own folder");
+await fails(A, `insert into storage.objects (bucket_id, name) values ('thumbnails', '${B}/abc.jpg')`, "storage: A cannot upload into B's folder");
+await fails(A, `insert into storage.objects (bucket_id, name) values ('thumbnails', 'abc.jpg')`, "storage: no uploads outside a user folder");
+ok((await as(B, `select count(*)::int c from storage.objects`)).rows[0].c === 0, "storage: B cannot see A's files");

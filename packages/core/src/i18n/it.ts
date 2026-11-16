@@ -41,6 +41,8 @@ export const it: Messages = {
   "item.alreadySavedNowhere": "Già salvato (in nessuna raccolta).",
   "item.saveAnyway": "Salva comunque",
   "item.delete": "Elimina link",
+  "item.refreshPreview": "Aggiorna anteprima",
+  "item.previewFailed": "Non sono riuscito a ottenere un'anteprima per questo link. Il sito potrebbe bloccare le richieste automatiche.",
   "item.deleteConfirm": "Eliminare questo link? Verrà tolto da tutte le raccolte.",
 
   "collection.new": "Nuova raccolta",

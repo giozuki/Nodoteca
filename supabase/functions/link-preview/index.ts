@@ -4,7 +4,8 @@
 //
 // Browsers cannot read other sites' HTML (CORS), so this function does it for
 // the app: YouTube via oEmbed, everything else via OpenGraph / <title> tags.
-// Only signed-in users can call it (verify_jwt is on by default).
+// Only signed-in users can call it. Images from CDNs with expiring URLs
+// (Instagram, Facebook, TikTok) are copied to Storage so previews keep working.
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -32,7 +33,8 @@ const json = (body: unknown, status = 200) =>
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
-  if (!(await isSignedIn(req))) return json({ error: "unauthorized" }, 401);
+  const userId = await signedInUser(req);
+  if (!userId) return json({ error: "unauthorized" }, 401);
 
   let url: URL;
   try {
@@ -45,6 +47,9 @@ Deno.serve(async (req) => {
 
   try {
     const preview = (isYouTube(url) && (await youtube(url))) || (await generic(url));
+    if (preview.thumbnail_url) {
+      preview.thumbnail_url = await keepCopyIfExpiring(preview.thumbnail_url, userId, req.headers.get("Authorization")!);
+    }
     return json(clean(preview));
   } catch {
     // A preview is a nice-to-have: never fail the save because of it.
@@ -59,16 +64,73 @@ Deno.serve(async (req) => {
  * also lets through the public keys (anon / publishable), so we ask Supabase
  * Auth whether the bearer token belongs to an actual user.
  */
-async function isSignedIn(req: Request): Promise<boolean> {
+async function signedInUser(req: Request): Promise<string | null> {
   const auth = req.headers.get("Authorization");
-  if (!auth?.startsWith("Bearer ")) return false;
+  if (!auth?.startsWith("Bearer ")) return null;
   const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, {
     headers: { Authorization: auth, apikey: Deno.env.get("SUPABASE_ANON_KEY") ?? "" },
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
-  if (!res.ok) return false;
+  if (!res.ok) return null;
   const user = await res.json().catch(() => null);
-  return typeof user?.id === "string";
+  return typeof user?.id === "string" ? user.id : null;
+}
+
+// --- Permanent thumbnails ---------------------------------------------------
+
+/** Image CDNs whose URLs are signed and stop working after a few weeks. */
+const EXPIRING_IMAGE_HOSTS = [/(^|\.)cdninstagram\.com$/, /(^|\.)fbcdn\.net$/, /(^|\.)tiktokcdn(-[a-z]+)?\.com$/, /(^|\.)ibyteimg\.com$/];
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const IMAGE_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif", "image/avif": "avif" };
+
+/**
+ * For images on expiring CDNs, store a copy in the "thumbnails" bucket under
+ * the user's folder (with the user's own JWT, so storage RLS applies) and
+ * return its public URL. Anything going wrong keeps the original URL.
+ */
+async function keepCopyIfExpiring(imageUrl: string, userId: string, authorization: string): Promise<string> {
+  let src: URL;
+  try {
+    src = new URL(imageUrl);
+  } catch {
+    return imageUrl;
+  }
+  if (!EXPIRING_IMAGE_HOSTS.some((re) => re.test(src.hostname)) || !isAllowed(src)) return imageUrl;
+
+  try {
+    const res = await fetch(src, { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const type = (res.headers.get("content-type") ?? "").split(";")[0]!.trim();
+    const ext = IMAGE_TYPES[type];
+    if (!res.ok || !ext) return imageUrl;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.byteLength === 0 || bytes.byteLength > MAX_IMAGE_BYTES) return imageUrl;
+
+    // Same source (ignoring the expiring signature) -> same file name.
+    const stable = src.origin + src.pathname;
+    const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(stable))))
+      .slice(0, 16)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const path = `${userId}/${hash}.${ext}`;
+
+    const base = Deno.env.get("SUPABASE_URL");
+    const upload = await fetch(`${base}/storage/v1/object/thumbnails/${path}`, {
+      method: "POST",
+      headers: {
+        Authorization: authorization,
+        apikey: Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+        "Content-Type": type,
+        "x-upsert": "true",
+        "Cache-Control": "max-age=31536000",
+      },
+      body: bytes,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!upload.ok) return imageUrl;
+    return `${base}/storage/v1/object/public/thumbnails/${path}`;
+  } catch {
+    return imageUrl;
+  }
 }
 
 function isAllowed(url: URL): boolean {

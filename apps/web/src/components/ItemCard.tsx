@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import type { CollectionGraph, ItemWithCollections } from "@nodoteca/core";
-import { useDeleteItem } from "../lib/api.ts";
+import { useDeleteItem, useRefreshPreview } from "../lib/api.ts";
 import { colorFor } from "../lib/colors.ts";
 import { useI18n } from "../lib/i18n.tsx";
 
@@ -21,6 +22,9 @@ function hostOf(url: string): string {
 export function ItemCard({ item, graph, onEdit }: Props) {
   const { t, locale } = useI18n();
   const remove = useDeleteItem();
+  const refresh = useRefreshPreview();
+  const [brokenThumb, setBrokenThumb] = useState<string | null>(null);
+  const showThumb = !!item.thumbnail_url && brokenThumb !== item.thumbnail_url;
   const site = item.site_name || hostOf(item.url);
   const date = new Date(item.created_at).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
   const collections = item.item_collections
@@ -31,8 +35,14 @@ export function ItemCard({ item, graph, onEdit }: Props) {
   return (
     <article className="card">
       <a className="card__thumb" href={item.url} target="_blank" rel="noopener noreferrer" tabIndex={-1} aria-hidden="true">
-        {item.thumbnail_url ? (
-          <img src={item.thumbnail_url} alt="" loading="lazy" referrerPolicy="no-referrer" />
+        {showThumb ? (
+          <img
+            src={item.thumbnail_url!}
+            alt=""
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setBrokenThumb(item.thumbnail_url)}
+          />
         ) : (
           <span className="card__placeholder">{site.slice(0, 1).toUpperCase()}</span>
         )}
@@ -58,6 +68,20 @@ export function ItemCard({ item, graph, onEdit }: Props) {
         )}
       </div>
       <div className="card__actions">
+        <button
+          className={`icon-btn ${refresh.isPending ? "is-spinning" : ""}`}
+          aria-label={t("item.refreshPreview")}
+          title={t("item.refreshPreview")}
+          disabled={refresh.isPending}
+          onClick={() =>
+            refresh.mutate(item, {
+              onSuccess: () => setBrokenThumb(null),
+              onError: () => alert(t("item.previewFailed")),
+            })
+          }
+        >
+          ↻
+        </button>
         <button className="icon-btn" onClick={onEdit} aria-label={t("item.edit")} title={t("item.edit")}>
           ✎
         </button>

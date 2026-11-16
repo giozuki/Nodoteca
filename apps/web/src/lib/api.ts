@@ -132,6 +132,26 @@ export function useUpdateItem() {
   });
 }
 
+/** Fetch a fresh preview and store it (title only if the item has none). */
+export function useRefreshPreview() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: async (item: ItemWithCollections) => {
+      const p = await fetchPreview(item.url);
+      if (!p || (!p.thumbnail_url && !p.title && !p.description)) throw new Error("no-preview");
+      const patch: Record<string, unknown> = {
+        thumbnail_url: p.thumbnail_url ?? item.thumbnail_url,
+        description: p.description ?? item.description,
+        site_name: p.site_name ?? item.site_name,
+        metadata: { ...item.metadata, ...p.metadata },
+      };
+      if (!item.title && p.title) patch.title = p.title;
+      must(await supabase.from("items").update(patch).eq("id", item.id).select("id"));
+    },
+    onSuccess: invalidate,
+  });
+}
+
 export function useDeleteItem() {
   const invalidate = useInvalidateAll();
   return useMutation({

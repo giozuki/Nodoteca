@@ -44,6 +44,8 @@ export const en = {
   "item.alreadySavedNowhere": "Already saved (not in any collection).",
   "item.saveAnyway": "Save anyway",
   "item.delete": "Delete link",
+  "item.refreshPreview": "Refresh preview",
+  "item.previewFailed": "Couldn't get a preview for this link. The site may block automatic requests.",
   "item.deleteConfirm": "Delete this link? It will be removed from every collection.",
 
   "collection.new": "New collection",
