@@ -11,13 +11,12 @@ import { CollectionDialog } from "./components/CollectionDialog.tsx";
 import { ExportDialog } from "./components/ExportDialog.tsx";
 import { ImportDialog } from "./components/ImportDialog.tsx";
 import { ItemDialog } from "./components/ItemDialog.tsx";
-import { LanguageSelect } from "./components/LanguageSelect.tsx";
 import { Library } from "./components/Library.tsx";
 import { Login } from "./components/Login.tsx";
 import { Logo } from "./components/Logo.tsx";
+import { SettingsMenu } from "./components/SettingsMenu.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
 import { SidebarResizer } from "./components/SidebarResizer.tsx";
-import { ThemeSelect } from "./components/ThemeSelect.tsx";
 
 /**
  * Offline with an expired access token, Supabase can't refresh it and reports
@@ -115,31 +114,16 @@ function Shell({ session }: { session: Session }) {
           <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("search.placeholder")} aria-label={t("search.placeholder")} />
         </form>
         <AddButton onAdd={setAdding} />
-        <details className="account">
-          <summary className="icon-btn" aria-label={t("settings.title")} title={t("settings.title")}>
-            ⚙
-          </summary>
-          <div className="account__menu">
-            <p className="muted small account__email">{session.user.email}</p>
-            <button className="btn btn--ghost" disabled={!online} onClick={() => setImporting(true)}>
-              ⇪ {t("import.menu")}
-            </button>
-            <button className="btn btn--ghost" disabled={!online} onClick={() => setExporting(true)}>
-              ⇩ {t("export.menu")}
-            </button>
-            <LanguageSelect />
-            <ThemeSelect />
-            <button
-              className="btn btn--ghost"
-              onClick={() => {
-                void clearSnapshot();
-                void supabase.auth.signOut();
-              }}
-            >
-              {t("auth.signOut")}
-            </button>
-          </div>
-        </details>
+        <SettingsMenu
+          email={session.user.email}
+          online={online}
+          onImport={() => setImporting(true)}
+          onExport={() => setExporting(true)}
+          onSignOut={() => {
+            void clearSnapshot();
+            void supabase.auth.signOut();
+          }}
+        />
       </header>
 
       <aside className="sidebar">

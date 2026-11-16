@@ -9,6 +9,7 @@ import {
   sharedFolderNames,
   tagCounts,
   type CollectionDetails,
+  type MessageKey,
   type ImportEntry,
   type ImportWarning,
 } from "@nodoteca/core";
@@ -53,29 +54,7 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog title={t("import.title")} onClose={busy ? () => {} : onClose}>
-      {step.kind === "pick" && (
-        <div className="import">
-          <p>{t("import.intro")}</p>
-          <ul className="import__how muted small">
-            <li>{t("import.howRaindrop")}</li>
-            <li>{t("import.howBrowser")}</li>
-            <li>{t("import.howBackup")}</li>
-            <li>{t("import.howNative")}</li>
-          </ul>
-          <label className="btn btn--primary import__file">
-            {t("import.choose")}
-            <input
-              type="file"
-              accept=".csv,.html,.htm,.json,text/csv,text/html,application/json"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void readFile(file);
-              }}
-            />
-          </label>
-          {step.error && <p className="error">{step.error}</p>}
-        </div>
-      )}
+      {step.kind === "pick" && <SourcePicker error={step.error} onFile={(file) => void readFile(file)} />}
 
       {step.kind === "review" && (
         <Review
@@ -125,6 +104,144 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
     </Dialog>
   );
 }
+
+/* --- Step 1: pick a source, then follow its instructions ---------------------- */
+
+type SourceId = "raindrop" | "browser" | "backup" | "native";
+
+const SOURCES: { id: SourceId; icon: string; accept: string; types: string; ordered: boolean; steps: number }[] = [
+  { id: "raindrop", icon: "💧", accept: ".csv,text/csv", types: ".csv", ordered: true, steps: 3 },
+  { id: "browser", icon: "🔖", accept: ".html,.htm,text/html", types: ".html", ordered: false, steps: 3 },
+  { id: "backup", icon: "🗄️", accept: ".json,application/json", types: ".json", ordered: true, steps: 2 },
+  { id: "native", icon: "🧩", accept: ".json,application/json", types: ".json", ordered: true, steps: 3 },
+];
+const ANY_FILE = ".csv,.html,.htm,.json,text/csv,text/html,application/json";
+const GUIDE_URL = "https://github.com/giozuki/Nodoteca/blob/main/docs/import-format.md";
+
+function SourcePicker({ error, onFile }: { error?: string; onFile: (file: File) => void }) {
+  const { t } = useI18n();
+  const [sourceId, setSourceId] = useState<SourceId | null>(null);
+  const source = SOURCES.find((s) => s.id === sourceId);
+
+  if (!source) {
+    return (
+      <div className="import">
+        <div>
+          <p className="import__lead">{t("import.pickTitle")}</p>
+          <p className="muted small">{t("import.pickHint")}</p>
+        </div>
+        <div className="sources">
+          {SOURCES.map((s) => (
+            <button key={s.id} type="button" className="source" onClick={() => setSourceId(s.id)}>
+              <span className="source__icon" aria-hidden="true">
+                {s.icon}
+              </span>
+              <span className="source__text">
+                <span className="source__name">
+                  {t(`import.src.${s.id}.name`)}
+                </span>
+                <span className="source__desc">{t(`import.src.${s.id}.desc`)}</span>
+              </span>
+              <span className="source__chevron" aria-hidden="true">
+                ›
+              </span>
+            </button>
+          ))}
+        </div>
+        <DropZone accept={ANY_FILE} onFile={onFile} compact />
+        {error && <p className="error">{error}</p>}
+      </div>
+    );
+  }
+
+  // Message keys are checked at compile time, so build them with a cast: not every source has three steps.
+  const steps = Array.from({ length: source.steps }, (_, i) => t(`import.src.${source.id}.s${i + 1}` as MessageKey));
+  const note = t(`import.src.${source.id}.note`);
+  const List = source.ordered ? "ol" : "ul";
+
+  return (
+    <div className="import">
+      <button type="button" className="link-btn import__back" onClick={() => setSourceId(null)}>
+        ‹ {t("import.back")}
+      </button>
+      <p className="import__lead">
+        <span aria-hidden="true">{source.icon}</span> {t(`import.src.${source.id}.name`)}
+      </p>
+      <List className={`import__steps ${source.ordered ? "" : "import__steps--plain"}`}>
+        {steps.map((text) => (
+          <li key={text}>{text}</li>
+        ))}
+      </List>
+      {note && <p className="muted small">{note}</p>}
+      {source.id === "native" && (
+        <a className="import__guide" href={GUIDE_URL} target="_blank" rel="noreferrer">
+          {t("import.guide")}
+        </a>
+      )}
+      <DropZone accept={source.accept} types={source.types} onFile={onFile} />
+      {error && <p className="error">{error}</p>}
+    </div>
+  );
+}
+
+/** A drop target with a "Choose a file" button inside. The file type is detected from its content. */
+function DropZone({ accept, types, compact, onFile }: { accept: string; types?: string; compact?: boolean; onFile: (file: File) => void }) {
+  const { t } = useI18n();
+  const [over, setOver] = useState(false);
+
+  const picker = (
+    <label className={`btn ${compact ? "btn--ghost" : "btn--primary"} import__file`}>
+      {t("import.choose")}
+      <input
+        type="file"
+        accept={accept}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = ""; // allow picking the same file again after an error
+          if (file) onFile(file);
+        }}
+      />
+    </label>
+  );
+
+  return (
+    <div
+      className={`dropzone ${compact ? "dropzone--compact" : ""} ${over ? "is-over" : ""}`}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setOver(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setOver(false);
+        const file = e.dataTransfer.files[0];
+        if (file) onFile(file);
+      }}
+    >
+      {compact ? (
+        <>
+          <span className="muted small">{t("import.dropShort")}</span>
+          {picker}
+        </>
+      ) : (
+        <>
+          <span className="dropzone__icon" aria-hidden="true">
+            ⇪
+          </span>
+          <strong>{t("import.drop")}</strong>
+          {types && <span className="muted small">{t("import.accepts", { types })}</span>}
+          <span className="muted small">{t("import.or")}</span>
+          {picker}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* --- Step 2: review ------------------------------------------------------------ */
 
 interface ReviewProps {
   entries: ImportEntry[];
