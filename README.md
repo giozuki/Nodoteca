@@ -117,7 +117,7 @@ npm test               # core + database tests
 
 - [x] **Phase 1 · Foundations:** monorepo, data model, Row Level Security, RPCs
 - [x] **Phase 2 · Web app (MVP):** sign-in, save, file in many collections, browse, search, link previews
-- [ ] **Phase 3 · Quick capture:** Chrome extension, installable PWA, Android share sheet
+- [x] **Phase 3 · Quick capture:** Chrome extension, installable PWA, Android share sheet
 - [ ] **Phase 4 · Import:** from Raindrop.io (CSV / HTML) and browser bookmarks
 - [ ] **Phase 5 · Polish:** offline mode, full export, shareable collections
 - [ ] **Phase 6 · Smart filing:** collection suggestions from song, artist and movie metadata
