@@ -16,6 +16,7 @@ import { Library } from "./components/Library.tsx";
 import { Login } from "./components/Login.tsx";
 import { Logo } from "./components/Logo.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
+import { SidebarResizer } from "./components/SidebarResizer.tsx";
 import { ThemeSelect } from "./components/ThemeSelect.tsx";
 
 /**
@@ -144,6 +145,7 @@ function Shell({ session }: { session: Session }) {
       <aside className="sidebar">
         <Sidebar onNewCollection={() => setNewCollection(true)} onNavigate={() => setMenuOpen(false)} />
       </aside>
+      <SidebarResizer />
       <div className="scrim" onClick={() => setMenuOpen(false)} />
 
       <main className="main">

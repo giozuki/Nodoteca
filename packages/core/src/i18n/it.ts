@@ -27,6 +27,8 @@ export const it: Messages = {
   "nav.unfiled": "Senza raccolta",
   "nav.collections": "Raccolte",
   "nav.menu": "Menu",
+  "nav.resize": "Ridimensiona la barra laterale",
+  "nav.resizeHint": "Trascina per ridimensionare · doppio clic per ripristinare",
 
   "item.add": "Salva link",
   "item.edit": "Modifica link",

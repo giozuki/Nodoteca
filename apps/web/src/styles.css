@@ -382,7 +382,24 @@ h1, h2 { margin: 0; line-height: 1.2; }
 .nav-link .count, .multi-parent, .dot { flex: none; }
 .tree__row { min-width: 0; }
 .sidebar { overflow-x: hidden; }
+/* The nav is a grid: its implicit column would grow to the longest name and
+   push the counts and the "+" past the sidebar edge. Pin it to the sidebar width. */
+.sidebar__nav { grid-template-columns: minmax(0, 1fr); }
 
 .import__warnings { border-color: color-mix(in srgb, var(--warning-text) 40%, var(--border)); background: var(--warning-bg); }
 .import__warnings legend { color: var(--warning-text); }
 .import__warnings ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+
+/* --- Sidebar resize (desktop) ------------------------------------------------ */
+
+.sidebar-resizer {
+  grid-area: side; justify-self: end; z-index: 10;
+  width: 9px; margin-right: -5px; cursor: col-resize; touch-action: none; outline: none;
+}
+.sidebar-resizer::after {
+  content: ""; display: block; height: 100%; width: 3px; margin: 0 auto;
+  background: var(--accent); opacity: 0; transition: opacity .15s;
+}
+.sidebar-resizer:hover::after, .sidebar-resizer.is-dragging::after, .sidebar-resizer:focus-visible::after { opacity: .6; }
+.shell:has(.sidebar-resizer.is-dragging) { cursor: col-resize; user-select: none; }
+@media (max-width: 820px) { .sidebar-resizer { display: none; } }

@@ -30,6 +30,8 @@ export const en = {
   "nav.unfiled": "Unfiled",
   "nav.collections": "Collections",
   "nav.menu": "Menu",
+  "nav.resize": "Resize sidebar",
+  "nav.resizeHint": "Drag to resize · double-click to reset",
 
   "item.add": "Save link",
   "item.edit": "Edit link",
