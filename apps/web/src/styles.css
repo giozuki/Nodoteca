@@ -358,3 +358,13 @@ h1, h2 { margin: 0; line-height: 1.2; }
 
 .icon-btn.is-spinning { animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- Export ------------------------------------------------------------------ */
+
+.export__options { display: grid; gap: 10px; }
+.export__option {
+  display: grid; gap: 4px; text-align: left; padding: 14px 16px; cursor: pointer;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+}
+.export__option:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.export__option:disabled { opacity: .6; cursor: default; }

@@ -4,7 +4,7 @@ import {
   buildImportPlan,
   collectionKey,
   normalizeUrl,
-  parseImportFile,
+  parseImportFileFull,
   sharedFolderNames,
   tagCounts,
   type ImportEntry,
@@ -16,7 +16,7 @@ import { Dialog } from "./Dialog.tsx";
 
 type Step =
   | { kind: "pick"; error?: string }
-  | { kind: "review"; entries: ImportEntry[]; existingUrls: Set<string>; fileName: string }
+  | { kind: "review"; entries: ImportEntry[]; edges: [string, string][]; existingUrls: Set<string>; fileName: string }
   | { kind: "running"; done: number; total: number }
   | { kind: "done"; result: ImportResult }
   | { kind: "failed" };
@@ -27,9 +27,9 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
 
   async function readFile(file: File) {
     try {
-      const entries = parseImportFile(await file.text());
-      if (!entries.length) return setStep({ kind: "pick", error: t("import.badFile") });
-      setStep({ kind: "review", entries, existingUrls: await fetchExistingUrls(), fileName: file.name });
+      const { entries, edges } = parseImportFileFull(await file.text());
+      if (!entries.length && !edges.length) return setStep({ kind: "pick", error: t("import.badFile") });
+      setStep({ kind: "review", entries, edges, existingUrls: await fetchExistingUrls(), fileName: file.name });
     } catch {
       setStep({ kind: "pick", error: t("import.badFile") });
     }
@@ -45,12 +45,13 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
           <ul className="import__how muted small">
             <li>{t("import.howRaindrop")}</li>
             <li>{t("import.howBrowser")}</li>
+            <li>{t("import.howBackup")}</li>
           </ul>
           <label className="btn btn--primary import__file">
             {t("import.choose")}
             <input
               type="file"
-              accept=".csv,.html,.htm,text/csv,text/html"
+              accept=".csv,.html,.htm,.json,text/csv,text/html,application/json"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) void readFile(file);
@@ -64,6 +65,7 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
       {step.kind === "review" && (
         <Review
           entries={step.entries}
+          edges={step.edges}
           existingUrls={step.existingUrls}
           fileName={step.fileName}
           onCancel={onClose}
@@ -109,13 +111,14 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
 
 interface ReviewProps {
   entries: ImportEntry[];
+  edges: [string, string][];
   existingUrls: Set<string>;
   fileName: string;
   onCancel: () => void;
   onStart: (run: (progress: (done: number, total: number) => void) => Promise<ImportResult>) => void;
 }
 
-function Review({ entries, existingUrls, fileName, onCancel, onStart }: ReviewProps) {
+function Review({ entries, edges, existingUrls, fileName, onCancel, onStart }: ReviewProps) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const existingCollections = useCollections().data ?? [];
@@ -126,8 +129,8 @@ function Review({ entries, existingUrls, fileName, onCancel, onStart }: ReviewPr
   const [chosenTags, setChosenTags] = useState<Set<string>>(new Set());
 
   const plan = useMemo(
-    () => buildImportPlan(entries, { tagsAsCollections: chosenTags, existingUrls, skipExisting, mergeSameNames: merge }),
-    [entries, chosenTags, existingUrls, skipExisting, merge],
+    () => buildImportPlan(entries, { tagsAsCollections: chosenTags, existingUrls, skipExisting, mergeSameNames: merge, edges }),
+    [entries, edges, chosenTags, existingUrls, skipExisting, merge],
   );
   const existingKeys = new Set(existingCollections.map((c) => collectionKey(c.name)));
   const newCollections = [...plan.collections.keys()].filter((k) => !existingKeys.has(k)).length;

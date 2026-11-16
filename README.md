@@ -119,8 +119,9 @@ npm test               # core + database tests
 - [x] **Phase 2 · Web app (MVP):** sign-in, save, file in many collections, browse, search, link previews
 - [x] **Phase 3 · Quick capture:** Chrome extension, installable PWA, Android share sheet
 - [x] **Phase 4 · Import:** from Raindrop.io (CSV / HTML) and browser bookmarks
-- [ ] **Phase 5 · Polish:** offline mode, full export, shareable collections
-- [ ] **Phase 6 · Smart filing:** collection suggestions from song, artist and movie metadata
+- [ ] **Phase 5 · Polish:** full export and backup (done), offline mode
+- [ ] **Phase 6 · Native import format:** a simple, documented JSON format (collections by name, several parents, no ids) that you or an LLM can write from any export, e.g. to reorganize a Raindrop export before importing it
+- [ ] **Phase 7 · Smart filing:** collection suggestions from song, artist and movie metadata
 
 ## 📄 License
 

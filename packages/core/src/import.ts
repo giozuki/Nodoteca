@@ -1,3 +1,4 @@
+import { EXPORT_FORMAT, type NodotecaExport } from "./export.ts";
 import { normalizeUrl } from "./url.ts";
 
 /** One link read from an export file, before it becomes an item. */
@@ -12,7 +13,19 @@ export interface ImportEntry {
   /** Folder path from the root, e.g. ["Cinema", "Serie TV", "Boris"]. */
   folders: string[];
   tags: string[];
-  source: "raindrop" | "bookmarks";
+  /** Collections the link goes into directly, always created (Nodoteca backups). */
+  collections?: string[];
+  /** Kept as-is when known (Nodoteca backups). */
+  site_name?: string | null;
+  metadata?: Record<string, unknown>;
+  source: "raindrop" | "bookmarks" | "nodoteca";
+}
+
+/** A parsed file: links, plus collection parent links when the file has a graph. */
+export interface ParsedImport {
+  entries: ImportEntry[];
+  /** [parent name, child name] */
+  edges: [string, string][];
 }
 
 // --- CSV (RFC 4180) -------------------------------------------------------------
@@ -174,11 +187,57 @@ function validDate(s: string | null): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+// --- Nodoteca JSON backup --------------------------------------------------------
+
+export function parseNodotecaJson(text: string): ParsedImport {
+  const data = JSON.parse(text) as Partial<NodotecaExport>;
+  if (data.format !== EXPORT_FORMAT || !Array.isArray(data.items) || !Array.isArray(data.collections)) {
+    throw new Error("not-nodoteca-export");
+  }
+  const names = new Map(data.collections.map((c) => [c.id, c.name]));
+  const edges: [string, string][] = [];
+  for (const c of data.collections) {
+    for (const p of c.parents ?? []) {
+      const parent = names.get(p);
+      if (parent) edges.push([parent, c.name]);
+    }
+  }
+  const entries = data.items
+    .filter((i) => typeof i.url === "string" && /^https?:\/\//i.test(i.url))
+    .map(
+      (i): ImportEntry => ({
+        url: i.url,
+        title: i.title ?? null,
+        note: i.note ?? null,
+        description: i.description ?? null,
+        thumbnail_url: i.thumbnail_url ?? null,
+        created_at: validDate(i.created_at ?? null),
+        folders: [],
+        tags: [],
+        collections: (i.collections ?? []).map((id) => names.get(id)).filter((n): n is string => !!n),
+        site_name: i.site_name ?? null,
+        metadata: i.metadata ?? {},
+        source: "nodoteca",
+      }),
+    );
+  // Collections without links still come back.
+  for (const c of data.collections) {
+    if (!entries.some((e) => e.collections?.includes(c.name))) edges.push([c.name, c.name]);
+  }
+  return { entries, edges };
+}
+
 /** Picks the right parser from the file content. */
-export function parseImportFile(text: string): ImportEntry[] {
+export function parseImportFileFull(text: string): ParsedImport {
+  const trimmed = text.trimStart();
+  if (trimmed.startsWith("{")) return parseNodotecaJson(trimmed);
   const head = text.slice(0, 2000).toLowerCase();
-  if (head.includes("<!doctype netscape-bookmark-file") || head.includes("<dl")) return parseBookmarksHtml(text);
-  return parseRaindropCsv(text);
+  if (head.includes("<!doctype netscape-bookmark-file") || head.includes("<dl")) return { entries: parseBookmarksHtml(text), edges: [] };
+  return { entries: parseRaindropCsv(text), edges: [] };
+}
+
+export function parseImportFile(text: string): ImportEntry[] {
+  return parseImportFileFull(text).entries;
 }
 
 // --- Plan -----------------------------------------------------------------------
@@ -195,6 +254,8 @@ export interface ImportOptions {
    * false = nested copies get the parent's name, e.g. "Cinema (Arte)".
    */
   mergeSameNames?: boolean;
+  /** Extra [parent name, child name] links (from a Nodoteca backup). [x, x] just creates x. */
+  edges?: readonly [string, string][];
 }
 
 export interface PlannedItem {
@@ -296,13 +357,14 @@ export function buildImportPlan(entries: readonly ImportEntry[], options: Import
       // Not merging: a shared name keeps its plain form only at the top level.
       const name = i > 0 && shared.has(collectionKey(folder)) ? `${folder.trim()} (${e.folders[i - 1]!.trim()})` : folder;
       const key = addCollection(name);
-      if (parent && parent !== key) edges.set(`${parent}\u0000${key}`, [parent, key]);
+      if (parent && parent !== key) edges.set(JSON.stringify([parent, key]), [parent, key]);
       parent = key;
     }
     if (parent) keys.add(parent); // filed in the deepest folder only
     for (const tag of e.tags) {
       if (options.tagsAsCollections.has(collectionKey(tag))) keys.add(addCollection(tag));
     }
+    for (const name of e.collections ?? []) keys.add(addCollection(name));
 
     let site: string | null = null;
     try {
@@ -317,11 +379,17 @@ export function buildImportPlan(entries: readonly ImportEntry[], options: Import
       note: e.note?.slice(0, 20000) ?? null,
       description: e.description?.slice(0, 5000) ?? null,
       thumbnail_url: e.thumbnail_url && /^https?:\/\//i.test(e.thumbnail_url) ? e.thumbnail_url.slice(0, 8192) : null,
-      site_name: site,
+      site_name: e.site_name ?? site,
       created_at: e.created_at,
-      metadata: { imported_from: e.source },
+      metadata: e.source === "nodoteca" ? { ...e.metadata } : { imported_from: e.source },
       collectionKeys: [...keys],
     });
+  }
+
+  for (const [parentName, childName] of options.edges ?? []) {
+    const parent = addCollection(parentName);
+    const child = addCollection(childName);
+    if (parent !== child) edges.set(JSON.stringify([parent, child]), [parent, child]);
   }
 
   return { collections, edges: [...edges.values()], items, skippedExisting, skippedDuplicatesInFile };
