@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 400" role="img" aria-labelledby="t d">
+  <title id="t">Nodoteca</title>
+  <desc id="d">One link, many collections: a single saved link connected to three collections.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16141F"/>
+      <stop offset="1" stop-color="#231F35"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F2C46D" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#F2C46D" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#FFFFFF" fill-opacity="0.05"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="400" rx="24" fill="url(#bg)"/>
+  <rect width="1280" height="400" rx="24" fill="url(#dots)"/>
+
+  <!-- Wordmark -->
+  <g font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif">
+    <text x="96" y="190" font-size="88" font-weight="700" fill="#F4F1EA" letter-spacing="-2">Nodoteca</text>
+    <text x="100" y="240" font-size="28" fill="#B8B2C9">One link, many collections.</text>
+    <text x="100" y="282" font-size="20" fill="#7D7794">Save once. File it everywhere it belongs.</text>
+  </g>
+
+  <!-- Graph: one item, three collections -->
+  <g stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M900 200 C 980 200, 1000 110, 1080 105" stroke="#8E7BFF" stroke-opacity="0.9"/>
+    <path d="M900 200 L 1095 200" stroke="#3DD6B5" stroke-opacity="0.9"/>
+    <path d="M900 200 C 980 200, 1000 290, 1080 295" stroke="#FF7A59" stroke-opacity="0.9"/>
+    <!-- a collection with two parents -->
+    <path d="M1124 120 C 1160 150, 1160 250, 1124 280" stroke="#FFFFFF" stroke-opacity="0.18" stroke-dasharray="4 8"/>
+  </g>
+
+  <circle cx="900" cy="200" r="90" fill="url(#glow)"/>
+
+  <!-- The item -->
+  <g>
+    <rect x="828" y="168" width="144" height="64" rx="16" fill="#F2C46D"/>
+    <polygon points="886,186 886,214 912,200" fill="#16141F"/>
+    <rect x="922" y="190" width="34" height="6" rx="3" fill="#16141F" fill-opacity="0.55"/>
+    <rect x="922" y="204" width="22" height="6" rx="3" fill="#16141F" fill-opacity="0.35"/>
+    <rect x="844" y="186" width="30" height="28" rx="6" fill="#16141F" fill-opacity="0.18"/>
+  </g>
+
+  <!-- Collections -->
+  <g font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="600">
+    <circle cx="1100" cy="105" r="22" fill="#8E7BFF"/>
+    <text x="1134" y="111" fill="#D9D2FF">Genre</text>
+
+    <circle cx="1117" cy="200" r="22" fill="#3DD6B5"/>
+    <text x="1151" y="206" fill="#C7F5EA">Artist</text>
+
+    <circle cx="1100" cy="295" r="22" fill="#FF7A59"/>
+    <text x="1134" y="301" fill="#FFD6CB">Anime</text>
+  </g>
+</svg>
