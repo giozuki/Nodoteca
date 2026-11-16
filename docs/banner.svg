@@ -54,6 +54,6 @@
     <text x="1151" y="206" fill="#C7F5EA">Artist</text>
 
     <circle cx="1100" cy="295" r="22" fill="#FF7A59"/>
-    <text x="1134" y="301" fill="#FFD6CB">Anime</text>
+    <text x="1134" y="301" fill="#FFD6CB">Movie</text>
   </g>
 </svg>
