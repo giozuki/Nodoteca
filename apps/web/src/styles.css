@@ -332,3 +332,26 @@ h1, h2 { margin: 0; line-height: 1.2; }
 .login--compact { padding: 16px; min-height: auto; }
 .login--compact .login__card { padding: 22px 18px; box-shadow: none; border: 0; background: transparent; }
 .login--compact .login__card h1 { font-size: 22px; }
+
+/* --- Import ------------------------------------------------------------------ */
+
+.import { display: grid; gap: 14px; }
+.import p { margin: 0; }
+.import__how { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.import__file { position: relative; overflow: hidden; justify-self: start; }
+.import__file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.import__file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.import__stats { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.import__group { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px 14px; margin: 0; display: grid; gap: 10px; }
+.import__group legend { padding: 0 6px; font-weight: 600; font-size: 14px; display: flex; gap: 12px; align-items: center; }
+.import__bulk { display: inline-flex; gap: 10px; font-weight: 400; }
+.import__shared { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.import__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag-choice { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; cursor: pointer; user-select: none; }
+.tag-choice input { display: none; }
+.tag-choice.is-on { background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: var(--accent); font-weight: 600; }
+.import__actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
+.import__progress { width: 100%; height: 10px; accent-color: var(--accent); }
+.import__done { font-size: 18px; font-weight: 700; color: var(--accent); }
+.link-btn { border: 0; background: none; padding: 0; cursor: pointer; color: var(--accent); font-weight: 600; font-size: 13px; }
+.link-btn:hover { text-decoration: underline; }

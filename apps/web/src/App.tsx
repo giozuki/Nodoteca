@@ -7,6 +7,7 @@ import { useRealtimeSync } from "./lib/api.ts";
 import { useI18n } from "./lib/i18n.tsx";
 import { supabase } from "./lib/supabase.ts";
 import { CollectionDialog } from "./components/CollectionDialog.tsx";
+import { ImportDialog } from "./components/ImportDialog.tsx";
 import { ItemDialog } from "./components/ItemDialog.tsx";
 import { LanguageSelect } from "./components/LanguageSelect.tsx";
 import { Library } from "./components/Library.tsx";
@@ -49,6 +50,7 @@ function Shell({ session }: { session: Session }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [adding, setAdding] = useState<Uuid[] | null>(null);
   const [newCollection, setNewCollection] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [search, setSearch] = useState(params.get("q") ?? "");
 
   useRealtimeSync(session.user.id);
@@ -91,6 +93,9 @@ function Shell({ session }: { session: Session }) {
           </summary>
           <div className="account__menu">
             <p className="muted small account__email">{session.user.email}</p>
+            <button className="btn btn--ghost" onClick={() => setImporting(true)}>
+              ⇪ {t("import.menu")}
+            </button>
             <LanguageSelect />
             <ThemeSelect />
             <button className="btn btn--ghost" onClick={() => void supabase.auth.signOut()}>
@@ -118,6 +123,7 @@ function Shell({ session }: { session: Session }) {
 
       {adding && <ItemDialog initial={{ collectionIds: adding }} onClose={() => setAdding(null)} />}
       {newCollection && <CollectionDialog onClose={() => setNewCollection(false)} />}
+      {importing && <ImportDialog onClose={() => setImporting(false)} />}
     </div>
   );
 }
