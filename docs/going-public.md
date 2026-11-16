@@ -51,8 +51,9 @@ use the same instance. Nothing here is urgent while it stays personal.
   (Cloudflare Pages, Netlify…) would be cleaner.
 
 - [ ] **Publish the browser extension** on the Chrome Web Store (it's loaded
-  unpacked today), and add the store's origin to nothing else: the extension
-  only needs `activeTab` and `storage`.
+  unpacked today). It only asks for `activeTab` and `storage`, which keeps the
+  review simple; the `externally_connectable` origins in its manifest must
+  match wherever the web app is hosted.
 
 - [ ] **Privacy policy and terms**, since the app stores people's links and
   email addresses.
