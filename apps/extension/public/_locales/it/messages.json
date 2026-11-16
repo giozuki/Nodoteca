@@ -1,0 +1,5 @@
+{
+  "name": { "message": "Nodoteca" },
+  "description": { "message": "Salva la pagina che stai guardando in una o più raccolte di Nodoteca." },
+  "actionTitle": { "message": "Salva in Nodoteca" }
+}

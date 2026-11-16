@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Nodoteca · Extension</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    :root { --bg: #f7f5f0; --surface: #fff; --border: #e4dfd5; --text: #1e1b2e; --muted: #6c6680; --ok: #2f9e80; --err: #d14b3a; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #16141f; --surface: #1f1c2c; --border: #332e47; --text: #f4f1ea; --muted: #a39cb8; --ok: #3dd6b5; --err: #ff7a59; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, sans-serif; }
+    main { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; text-align: center; }
+    img { width: 56px; height: 56px; }
+    h1 { margin: 12px 0 8px; font-size: 22px; }
+    p { margin: 0; color: var(--muted); }
+    .ok h1 { color: var(--ok); }
+    .err h1 { color: var(--err); }
+  </style>
+</head>
+<body>
+  <main id="box">
+    <img src="favicon.svg" alt="">
+    <h1 id="title">…</h1>
+    <p id="text"></p>
+  </main>
+  <script>
+    // The sign-in link sent by the Nodoteca extension lands here with the session
+    // in the URL fragment (never sent to any server). This page hands it to the
+    // extension that asked for it, then wipes it from the address bar.
+    (function () {
+      var it = (navigator.language || "").toLowerCase().indexOf("it") === 0;
+      var T = it
+        ? { ok: "Estensione collegata!", okText: "Puoi chiudere questa scheda e riaprire Nodoteca dalla barra degli strumenti.", err: "Collegamento non riuscito", errText: "Il link è scaduto o l'estensione non è installata in questo browser. Riprova dall'estensione." }
+        : { ok: "Extension connected!", okText: "You can close this tab and open Nodoteca again from the toolbar.", err: "Couldn't connect", errText: "The link expired or the extension isn't installed in this browser. Try again from the extension." };
+
+      var hash = new URLSearchParams(location.hash.slice(1));
+      var ext = new URLSearchParams(location.search).get("ext");
+      var access = hash.get("access_token");
+      var refresh = hash.get("refresh_token");
+      history.replaceState(null, "", location.pathname);
+
+      function show(ok) {
+        document.getElementById("box").className = ok ? "ok" : "err";
+        document.getElementById("title").textContent = ok ? T.ok : T.err;
+        document.getElementById("text").textContent = ok ? T.okText : T.errText;
+      }
+
+      var runtime = window.chrome && window.chrome.runtime;
+      if (!ext || !/^[a-p]{32}$/.test(ext) || !access || !refresh || !runtime || !runtime.sendMessage) return show(false);
+
+      runtime.sendMessage(ext, { type: "nodoteca:session", access_token: access, refresh_token: refresh }, function (res) {
+        show(!runtime.lastError && !!(res && res.ok));
+      });
+    })();
+  </script>
+</body>
+</html>

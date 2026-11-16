@@ -14,6 +14,17 @@ export const en = {
   "auth.checkInbox": "Check your inbox: we sent a sign-in link to {email}.",
   "auth.useAnotherEmail": "Use a different email",
   "auth.signOut": "Sign out",
+  "auth.codeHint": "Type the code from the email, or just click the link in it.",
+  "auth.code": "Code",
+  "auth.extCheckInbox": "Check your inbox: open the link we sent to {email}, then click the Nodoteca icon again.",
+  "auth.verify": "Sign in",
+  "auth.invalidCode": "That code is wrong or expired. Request a new one.",
+
+  "share.noUrl": "No link found in what was shared.",
+
+  "ext.saved": "Saved!",
+  "ext.open": "Open Nodoteca",
+  "ext.unsupported": "This page can't be saved.",
 
   "nav.all": "All links",
   "nav.unfiled": "Unfiled",

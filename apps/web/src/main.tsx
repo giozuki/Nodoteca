@@ -15,10 +15,17 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <App />
         </BrowserRouter>
       </I18nProvider>
     </QueryClientProvider>
   </StrictMode>,
 );
+
+// Installable + offline app shell. Production only: in dev it would fight with hot reload.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL });
+  });
+}

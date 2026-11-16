@@ -325,3 +325,10 @@ h1, h2 { margin: 0; line-height: 1.2; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* --- Sign-in code ------------------------------------------------------------ */
+
+.code-input { font-size: 22px !important; letter-spacing: .3em; text-align: center; font-variant-numeric: tabular-nums; }
+.login--compact { padding: 16px; min-height: auto; }
+.login--compact .login__card { padding: 22px 18px; box-shadow: none; border: 0; background: transparent; }
+.login--compact .login__card h1 { font-size: 22px; }

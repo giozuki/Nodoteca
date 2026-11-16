@@ -50,9 +50,11 @@ one parent.
 | 🧬 **Collections with many parents** | "Movie Z" can live under both *Movies* and *Soundtracks*. Cycles are blocked automatically. |
 | ♻️ **Duplicates allowed** | Save the same URL again if you want to. Nodoteca only warns you: *"already saved in A, B"*. |
 | 🔄 **Sync everywhere** | One account, every device. Changes show up in real time. |
-| 🔎 **Full-text search** | Search titles, notes, descriptions and URLs. |
+| 🔎 **Search as you think** | Type any part of a word: "anthr" finds "Anthropic". Searches titles, notes, sites and URLs. |
+| 📲 **Save from anywhere** | Install it as an app, share links to it from any Android app, or save the current tab with the Chrome extension. |
 | 🔒 **Private by default** | Row Level Security in Postgres: you are the only one who can see your data. |
 | 🌍 **Multilingual** | English and Italian to start, and adding a language means adding one file. |
+| 🌗 **Light and dark** | Follows your system, or pick one. |
 
 <sub>Nodoteca is in early development. The data model and backend are in place, and the apps are next. See the [roadmap](#roadmap).</sub>
 
@@ -102,6 +104,7 @@ npm run functions:deploy   # link previews
 cp .env.example .env   # then fill in URL and publishable key
 
 npm run dev            # http://localhost:3000
+npm run build:extension  # then load apps/extension/dist in chrome://extensions
 npm test               # core + database tests
 ```
 

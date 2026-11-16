@@ -1,0 +1,26 @@
+/* Popup-only layout on top of the web app's tokens and components. */
+
+html, body, #root { height: auto; }
+body.ext { width: 380px; min-height: 200px; }
+
+.ext-splash { display: grid; place-items: center; height: 200px; }
+
+.ext-popup { display: grid; gap: 14px; padding: 14px 16px 12px; }
+.ext-header { display: flex; align-items: center; gap: 8px; font-size: 16px; }
+.ext-header .link-btn { margin-left: auto; }
+
+.link-btn { border: 0; background: none; padding: 0; cursor: pointer; color: var(--accent); font-weight: 600; font-size: 13px; }
+.link-btn:hover { text-decoration: underline; }
+.link-btn.muted { color: var(--muted); font-weight: 400; }
+
+.ext-form { display: grid; gap: 12px; }
+.ext-form .btn { width: 100%; }
+
+.ext-target { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: var(--radius-sm); background: var(--surface-2); min-width: 0; }
+.ext-target img { width: 64px; height: 36px; object-fit: cover; border-radius: 6px; flex: none; }
+.ext-url { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ext-message { margin: 8px 0; }
+.ext-saved { margin: 24px 0; text-align: center; font-size: 18px; font-weight: 700; color: var(--accent); }
+
+.ext-footer { display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 8px; }

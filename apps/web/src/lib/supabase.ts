@@ -8,7 +8,13 @@ if (!url || !key) {
 }
 
 export const supabase = createClient(url, key, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    // The web app uses PKCE; the extension build switches to "implicit" (see its vite.config.ts).
+    flowType: import.meta.env.VITE_AUTH_FLOW === "implicit" ? "implicit" : "pkce",
+  },
 });
 
 /** Unwraps a Supabase response: returns data or throws the error. */

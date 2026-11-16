@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import type { Session } from "@supabase/supabase-js";
 import type { Uuid } from "@nodoteca/core";
+import { extractShared } from "@nodoteca/core";
 import { useRealtimeSync } from "./lib/api.ts";
 import { useI18n } from "./lib/i18n.tsx";
 import { supabase } from "./lib/supabase.ts";
@@ -18,7 +19,16 @@ function useSession(): Session | null | undefined {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    const { data } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      if (event === "SIGNED_IN") {
+        try {
+          localStorage.removeItem("nodoteca.pendingEmail");
+        } catch {
+          /* nothing to clean */
+        }
+      }
+    });
     return () => data.subscription.unsubscribe();
   }, []);
   return session;
@@ -27,7 +37,7 @@ function useSession(): Session | null | undefined {
 export function App() {
   const session = useSession();
   if (session === undefined) return <div className="splash"><Logo size={48} /></div>;
-  if (!session) return <Login />;
+  if (!session) return <Login redirectTo={window.location.origin + import.meta.env.BASE_URL} />;
   return <Shell session={session} />;
 }
 
@@ -101,6 +111,7 @@ function Shell({ session }: { session: Session }) {
           <Route path="/unfiled" element={<Library view="unfiled" onAdd={setAdding} />} />
           <Route path="/c/:id" element={<Library view="collection" onAdd={setAdding} />} />
           <Route path="/search" element={<Library view="search" onAdd={setAdding} />} />
+          <Route path="/share" element={<ShareTarget />} />
           <Route path="*" element={<Library view="all" onAdd={setAdding} />} />
         </Routes>
       </main>
@@ -130,4 +141,28 @@ function AddButtonInner({ onAdd, label }: { onAdd: (ids: Uuid[]) => void; label:
       <span className="topbar__add-label">{label}</span>
     </button>
   );
+}
+
+/**
+ * Android share sheet lands here (manifest share_target): /share?title=…&text=…&url=…
+ * Opens the save dialog pre-filled, then goes back to the library.
+ */
+function ShareTarget() {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const shared = extractShared({ url: params.get("url"), text: params.get("text"), title: params.get("title") });
+  const done = () => navigate("/", { replace: true });
+
+  if (!shared.url) {
+    return (
+      <div className="empty">
+        <p>{t("share.noUrl")}</p>
+        <button className="btn btn--ghost" onClick={done}>
+          {t("common.close")}
+        </button>
+      </div>
+    );
+  }
+  return <ItemDialog initial={{ url: shared.url, title: shared.title ?? undefined }} onClose={done} />;
 }

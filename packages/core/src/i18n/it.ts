@@ -11,6 +11,17 @@ export const it: Messages = {
   "auth.checkInbox": "Controlla la posta: abbiamo inviato un link di accesso a {email}.",
   "auth.useAnotherEmail": "Usa un'altra email",
   "auth.signOut": "Esci",
+  "auth.codeHint": "Scrivi il codice che trovi nell'email, oppure clicca il link.",
+  "auth.code": "Codice",
+  "auth.extCheckInbox": "Controlla la posta: apri il link che abbiamo inviato a {email}, poi clicca di nuovo l'icona di Nodoteca.",
+  "auth.verify": "Accedi",
+  "auth.invalidCode": "Codice errato o scaduto. Richiedine uno nuovo.",
+
+  "share.noUrl": "Nessun link trovato in ciò che hai condiviso.",
+
+  "ext.saved": "Salvato!",
+  "ext.open": "Apri Nodoteca",
+  "ext.unsupported": "Questa pagina non si può salvare.",
 
   "nav.all": "Tutti i link",
   "nav.unfiled": "Senza raccolta",

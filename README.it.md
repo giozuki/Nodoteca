@@ -50,9 +50,11 @@ vuoi. Anche le raccolte sono nodi, quindi possono avere più di un genitore.
 | 🧬 **Raccolte con più genitori** | "Film Z" può stare sia sotto *Film* sia sotto *Colonne sonore*. I cicli vengono bloccati in automatico. |
 | ♻️ **Duplicati ammessi** | Se vuoi, puoi salvare di nuovo lo stesso URL. Nodoteca ti avvisa soltanto: *"già salvato in A, B"*. |
 | 🔄 **Sincronizzazione ovunque** | Un account per tutti i dispositivi. Le modifiche compaiono in tempo reale. |
-| 🔎 **Ricerca nel testo** | Cerchi in titoli, note, descrizioni e URL. |
+| 🔎 **Ricerca per frammenti** | Basta un pezzo di parola: "anthr" trova "Anthropic". Cerca in titoli, note, siti e URL. |
+| 📲 **Salvi da ovunque** | Installala come app, condividi i link da qualsiasi app Android, o salva la scheda aperta con l'estensione Chrome. |
 | 🔒 **Privato di default** | Row Level Security su Postgres: i tuoi dati li vedi solo tu. |
 | 🌍 **Multilingua** | Inglese e italiano per cominciare; per aggiungere una lingua basta un file. |
+| 🌗 **Chiaro e scuro** | Segue il sistema, oppure scegli tu. |
 
 <sub>Nodoteca è all'inizio dello sviluppo. Il modello dati e il backend sono pronti, le app sono il prossimo passo. Vedi la [roadmap](#roadmap).</sub>
 
@@ -102,6 +104,7 @@ npm run functions:deploy   # anteprime dei link
 cp .env.example .env   # poi inserisci URL e publishable key
 
 npm run dev            # http://localhost:3000
+npm run build:extension  # poi carica apps/extension/dist in chrome://extensions
 npm test               # test del core e del database
 ```
 

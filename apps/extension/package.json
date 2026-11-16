@@ -1,0 +1,19 @@
+{
+  "name": "@nodoteca/extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nodoteca browser extension (Chrome, Manifest V3).",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nodoteca/core": "*"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.3.7"
+  }
+}
