@@ -25,16 +25,16 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) process
 const fails = async (uid, sql, m) => { try { await as(uid, sql); ok(false, m); } catch (e) { ok(true, m + "  -> " + e.message); } };
 
 const ins = async (n) => (await as(A, `insert into collections (name) values ('${n}') returning id`)).rows[0].id;
-const music = await ins("Music"), genre = await ins("Genre X"), artist = await ins("Artist Y"), anime = await ins("Anime"), animeZ = await ins("Anime Z"), edits = await ins("Edits");
+const music = await ins("Music"), genre = await ins("Genre X"), artist = await ins("Artist Y"), movies = await ins("Movies"), movieZ = await ins("Movie Z"), soundtracks = await ins("Soundtracks");
 await fails(A, `insert into collections (name) values (' genre x ')`, "duplicate collection name (case/space-insensitive) rejected");
-await as(A, `insert into collection_edges (parent_id, child_id) values ('${music}','${genre}'),('${music}','${artist}'),('${anime}','${animeZ}'),('${edits}','${animeZ}')`);
-ok(true, "collection with two parents (Anime Z under Anime and Edits)");
-await fails(A, `insert into collection_edges (parent_id, child_id) values ('${animeZ}','${anime}')`, "direct cycle rejected");
-await as(A, `insert into collection_edges (parent_id, child_id) values ('${genre}','${edits}')`);
-await fails(A, `insert into collection_edges (parent_id, child_id) values ('${animeZ}','${music}')`, "indirect cycle rejected (Music>Genre>Edits>AnimeZ>Music)");
+await as(A, `insert into collection_edges (parent_id, child_id) values ('${music}','${genre}'),('${music}','${artist}'),('${movies}','${movieZ}'),('${soundtracks}','${movieZ}')`);
+ok(true, "collection with two parents (Movie Z under Movies and Soundtracks)");
+await fails(A, `insert into collection_edges (parent_id, child_id) values ('${movieZ}','${movies}')`, "direct cycle rejected");
+await as(A, `insert into collection_edges (parent_id, child_id) values ('${genre}','${soundtracks}')`);
+await fails(A, `insert into collection_edges (parent_id, child_id) values ('${movieZ}','${music}')`, "indirect cycle rejected (Music>Genre>Soundtracks>MovieZ>Music)");
 await fails(A, `insert into collection_edges (parent_id, child_id) values ('${music}','${music}')`, "self-loop rejected");
 
-const r = await as(A, `select id from save_item('https://www.youtube.com/watch?v=abc', array['${genre}','${artist}','${animeZ}']::uuid[], 'Edit video')`);
+const r = await as(A, `select id from save_item('https://www.youtube.com/watch?v=abc', array['${genre}','${artist}','${movieZ}']::uuid[], 'Edit video')`);
 const item = r.rows[0].id;
 ok((await as(A, `select count(*)::int c from item_collections where item_id='${item}'`)).rows[0].c === 3, "one item in three collections");
 await as(A, `select save_item('https://www.youtube.com/watch?v=abc', array['${music}']::uuid[])`);

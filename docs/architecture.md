@@ -60,7 +60,7 @@ erDiagram
 |---|---|
 | **Items ↔ collections is many-to-many** | The whole point of Nodoteca: a link belongs to every topic it touches. |
 | **URLs are not unique** | Saving the same link twice is allowed. `find_saved(url)` lets the UI warn ("already in A, B") instead of refusing. |
-| **Collections form a graph (DAG), not a tree** | A collection can have several parents, so "Anime Z" can sit under both *Anime* and *Edits* without being copied. A trigger rejects cycles. |
+| **Collections form a graph (DAG), not a tree** | A collection can have several parents, so "Movie Z" can sit under both *Movies* and *Soundtracks* without being copied. A trigger rejects cycles. |
 | **Collection names are unique per user** | A name *is* the node. "Rock" reached from two parents is the same "Rock". |
 | **`owner_id` on join tables** | Keeps RLS policies simple and fast; `with check` also verifies both ends belong to the user. |
 | **Full-text search in Postgres** | A generated `tsvector` (title > note > description > site/URL) plus a trigram index on titles. No extra search service. |

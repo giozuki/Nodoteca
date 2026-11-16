@@ -28,7 +28,7 @@ Quasi tutti i gestori di segnalibri ti obbligano a scegliere **una** cartella
 per ogni link. Ma un link raramente appartiene a un solo argomento.
 
 Prendi un video YouTube in cui una canzone del **genere X**, dell'**artista Y**,
-è usata in un edit dell'**anime Z**. Lo vorresti in tutti e tre i posti. Nella
+è usata in una scena del **film Z**. Lo vorresti in tutti e tre i posti. Nella
 maggior parte dei gestori di segnalibri non si può, e i tag risolvono il
 problema solo in parte.
 
@@ -38,8 +38,8 @@ vuoi. Anche le raccolte sono nodi, quindi possono avere più di un genitore.
 ```
             ┌──▶ Genere X ──▶ Musica
   🎬 video ─┼──▶ Artista Y ─▶ Musica
-            └──▶ Anime Z ───┬▶ Anime
-                            └▶ Edit
+            └──▶ Film Z ────┬▶ Film
+                            └▶ Colonne sonore
 ```
 
 ## ✨ Funzionalità
@@ -47,7 +47,7 @@ vuoi. Anche le raccolte sono nodi, quindi possono avere più di un genitore.
 | | |
 |---|---|
 | 🕸️ **Più raccolte per link** | Metti un link in tutti gli argomenti che tocca. Resta un unico link: lo modifichi una volta e la modifica si vede ovunque. |
-| 🧬 **Raccolte con più genitori** | "Anime Z" può stare sia sotto *Anime* sia sotto *Edit*. I cicli vengono bloccati in automatico. |
+| 🧬 **Raccolte con più genitori** | "Film Z" può stare sia sotto *Film* sia sotto *Colonne sonore*. I cicli vengono bloccati in automatico. |
 | ♻️ **Duplicati ammessi** | Se vuoi, puoi salvare di nuovo lo stesso URL. Nodoteca ti avvisa soltanto: *"già salvato in A, B"*. |
 | 🔄 **Sincronizzazione ovunque** | Un account per tutti i dispositivi. Le modifiche compaiono in tempo reale. |
 | 🔎 **Ricerca nel testo** | Cerchi in titoli, note, descrizioni e URL. |
@@ -113,7 +113,7 @@ cp .env.example .env   # poi inserisci URL e publishable key
 - [ ] **Fase 3 · Cattura veloce:** estensione Chrome, PWA installabile, menu "Condividi" di Android
 - [ ] **Fase 4 · Importazione:** da Raindrop.io (CSV / HTML) e dai segnalibri del browser
 - [ ] **Fase 5 · Rifinitura:** modalità offline, export completo, raccolte condivisibili
-- [ ] **Fase 6 · Classificazione intelligente:** raccolte suggerite in base a canzone, artista e anime
+- [ ] **Fase 6 · Classificazione intelligente:** raccolte suggerite in base a canzone, artista e film
 
 ## 📄 Licenza
 

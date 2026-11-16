@@ -2,7 +2,7 @@
 -- Nodoteca: initial schema
 --
 --   items             every saved link (URLs are NOT unique: duplicates allowed)
---   collections       named nodes ("Rock", "Artist Y", "Anime Z", ...)
+--   collections       named nodes ("Rock", "Artist Y", "Movie Z", ...)
 --   item_collections  many-to-many: one item can live in any number of collections
 --   collection_edges  many-to-many: one collection can have any number of parents
 --                     (a directed acyclic graph, not a tree)

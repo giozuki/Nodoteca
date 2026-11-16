@@ -28,7 +28,7 @@ Most bookmark managers make you pick **one** folder per link. Real links rarely
 fit in one box.
 
 Take a YouTube video where a song of **genre X**, by **artist Y**, is used in
-an edit of **anime Z**. You want it in all three places. In most bookmark
+a scene of **movie Z**. You want it in all three places. In most bookmark
 managers you can't, and tags only partly make up for it.
 
 Nodoteca treats a link as a **node** that you can connect to as many
@@ -38,8 +38,8 @@ one parent.
 ```
             ┌──▶ Genre X ──▶ Music
   🎬 video ─┼──▶ Artist Y ─▶ Music
-            └──▶ Anime Z ──┬▶ Anime
-                           └▶ Edits
+            └──▶ Movie Z ──┬▶ Movies
+                           └▶ Soundtracks
 ```
 
 ## ✨ Features
@@ -47,7 +47,7 @@ one parent.
 | | |
 |---|---|
 | 🕸️ **Many collections per link** | File a link under every topic it touches. It's still one link: edit it once and the change shows up everywhere. |
-| 🧬 **Collections with many parents** | "Anime Z" can live under both *Anime* and *Edits*. Cycles are blocked automatically. |
+| 🧬 **Collections with many parents** | "Movie Z" can live under both *Movies* and *Soundtracks*. Cycles are blocked automatically. |
 | ♻️ **Duplicates allowed** | Save the same URL again if you want to. Nodoteca only warns you: *"already saved in A, B"*. |
 | 🔄 **Sync everywhere** | One account, every device. Changes show up in real time. |
 | 🔎 **Full-text search** | Search titles, notes, descriptions and URLs. |
@@ -113,7 +113,7 @@ cp .env.example .env   # then fill in URL and publishable key
 - [ ] **Phase 3 · Quick capture:** Chrome extension, installable PWA, Android share sheet
 - [ ] **Phase 4 · Import:** from Raindrop.io (CSV / HTML) and browser bookmarks
 - [ ] **Phase 5 · Polish:** offline mode, full export, shareable collections
-- [ ] **Phase 6 · Smart filing:** collection suggestions from song, artist and anime metadata
+- [ ] **Phase 6 · Smart filing:** collection suggestions from song, artist and movie metadata
 
 ## 📄 License
 
