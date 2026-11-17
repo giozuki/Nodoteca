@@ -24,6 +24,9 @@ function hostOf(url: string): string {
   }
 }
 
+/** Below this width/height ratio (the frame is 1.6) a picture would lose too much to cropping. */
+const FIT_BELOW_RATIO = 1.25;
+
 /** A stable tint for a card without a picture: its first collection's colour, else one from the host. */
 function tintFor(host: string, first: string | undefined): string {
   if (first) return first;
@@ -43,6 +46,13 @@ export function ItemCard({ item, graph, onEdit, index = 0 }: Props) {
   }, [online]);
   const [brokenThumb, setBrokenThumb] = useState<string | null>(null);
   const showThumb = !!item.thumbnail_url && brokenThumb !== item.thumbnail_url;
+  // Portrait or square pictures are shown whole, over a blurred copy of themselves.
+  const [tallThumb, setTallThumb] = useState<string | null>(null);
+  const fitThumb = showThumb && tallThumb === item.thumbnail_url;
+  const measureThumb = (img: HTMLImageElement) => {
+    const { naturalWidth: w, naturalHeight: h } = img;
+    if (h > 0) setTallThumb(w / h < FIT_BELOW_RATIO ? item.thumbnail_url : null);
+  };
   const host = hostOf(item.url);
   const site = item.site_name || host;
   const date = new Date(item.created_at).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
@@ -56,13 +66,22 @@ export function ItemCard({ item, graph, onEdit, index = 0 }: Props) {
     <article className="card" style={{ "--i": Math.min(index, 12) } as React.CSSProperties}>
       <a className="card__thumb" href={item.url} target="_blank" rel="noopener noreferrer" tabIndex={-1} aria-hidden="true">
         {showThumb ? (
-          <img
-            src={item.thumbnail_url!}
-            alt=""
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            onError={() => setBrokenThumb(item.thumbnail_url)}
-          />
+          <>
+            {fitThumb && <img className="card__thumb-backdrop" src={item.thumbnail_url!} alt="" referrerPolicy="no-referrer" />}
+            <img
+              className={fitThumb ? "card__thumb-fit" : undefined}
+              src={item.thumbnail_url!}
+              alt=""
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              // Measured on load, and right away when the picture is already there (cache, remount).
+              ref={(img) => {
+                if (img?.complete) measureThumb(img);
+              }}
+              onLoad={(e) => measureThumb(e.currentTarget)}
+              onError={() => setBrokenThumb(item.thumbnail_url)}
+            />
+          </>
         ) : (
           <span className="card__placeholder" style={{ "--tint": tint } as React.CSSProperties}>
             <span className="card__placeholder-letter">{site.slice(0, 1).toUpperCase()}</span>

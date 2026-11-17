@@ -559,7 +559,18 @@ button.tree__toggle:hover { color: var(--text); }
   border-radius: calc(var(--radius) - 6px); background: var(--surface-2);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 6%, transparent);
 }
-.card__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 500ms var(--ease-out); }
+/* Absolutely placed: a percentage height on a grid item wouldn't resolve, and the picture would
+   keep its own height (cropped by overflow, never really "fitted"). */
+.card__thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 500ms var(--ease-out); }
+/* Portrait/square pictures: shown whole, over a blurred, darkened copy that fills the frame. */
+.card__thumb img.card__thumb-backdrop {
+  transform: scale(1.2);
+  filter: blur(18px) brightness(.7) saturate(1.2);
+}
+.card__thumb img.card__thumb-fit { object-fit: contain; }
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .card__thumb img.card__thumb-backdrop { transform: scale(1.24); }
+}
 .card__thumb::after {
   content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 8%, transparent);
@@ -719,6 +730,9 @@ button.tree__toggle:hover { color: var(--text); }
   .grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .card { flex-direction: row; align-items: flex-start; gap: 4px; padding: 6px; border-radius: 14px; }
   .card__thumb { width: 92px; aspect-ratio: 1; border-radius: 10px; flex: none; align-self: flex-start; }
+  /* Small square thumbs: keep the plain crop. */
+  .card__thumb img.card__thumb-backdrop { display: none; }
+  .card__thumb img.card__thumb-fit { object-fit: cover; }
   .card__placeholder-letter { font-size: 40px; }
   .card__placeholder-host { display: none; }
   .card__body { padding: 6px 6px 4px 8px; gap: 5px; flex: 1; }
