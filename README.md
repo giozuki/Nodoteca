@@ -9,11 +9,11 @@
 </p>
 
 <p align="center">
-  <img alt="Status: early development" src="https://img.shields.io/badge/status-early%20development-F2C46D?style=flat-square">
+  <img alt="Status: active development" src="https://img.shields.io/badge/status-active%20development-FF6A35?style=flat-square">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white">
   <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres-3DD6B5?style=flat-square&logo=supabase&logoColor=white">
-  <img alt="PWA" src="https://img.shields.io/badge/PWA-planned-8E7BFF?style=flat-square&logo=pwa&logoColor=white">
-  <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-6A5E51?style=flat-square">
+  <img alt="PWA: installable" src="https://img.shields.io/badge/PWA-installable-5AA9E6?style=flat-square&logo=pwa&logoColor=white">
+  <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-F2C46D?style=flat-square">
 </p>
 
 <p align="center">
@@ -56,7 +56,7 @@ one parent.
 | 🌍 **Multilingual** | English and Italian to start, and adding a language means adding one file. |
 | 🌗 **Light and dark** | Follows your system, or pick one. |
 
-<sub>Nodoteca is in early development. The data model and backend are in place, and the apps are next. See the [roadmap](#roadmap).</sub>
+<sub>Nodoteca is in active development and in daily use: the web app, the installable PWA and the Chrome extension all work. Smart filing is next. See the [roadmap](#roadmap).</sub>
 
 ## 🧱 Tech stack
 

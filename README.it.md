@@ -9,11 +9,11 @@
 </p>
 
 <p align="center">
-  <img alt="Stato: sviluppo iniziale" src="https://img.shields.io/badge/stato-sviluppo%20iniziale-F2C46D?style=flat-square">
+  <img alt="Stato: sviluppo attivo" src="https://img.shields.io/badge/stato-sviluppo%20attivo-FF6A35?style=flat-square">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white">
   <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres-3DD6B5?style=flat-square&logo=supabase&logoColor=white">
-  <img alt="PWA" src="https://img.shields.io/badge/PWA-in%20arrivo-8E7BFF?style=flat-square&logo=pwa&logoColor=white">
-  <img alt="Licenza: MIT" src="https://img.shields.io/badge/Licenza-MIT-6A5E51?style=flat-square">
+  <img alt="PWA: installabile" src="https://img.shields.io/badge/PWA-installabile-5AA9E6?style=flat-square&logo=pwa&logoColor=white">
+  <img alt="Licenza: MIT" src="https://img.shields.io/badge/Licenza-MIT-F2C46D?style=flat-square">
 </p>
 
 <p align="center">
@@ -56,7 +56,7 @@ vuoi. Anche le raccolte sono nodi, quindi possono avere più di un genitore.
 | 🌍 **Multilingua** | Inglese e italiano per cominciare; per aggiungere una lingua basta un file. |
 | 🌗 **Chiaro e scuro** | Segue il sistema, oppure scegli tu. |
 
-<sub>Nodoteca è all'inizio dello sviluppo. Il modello dati e il backend sono pronti, le app sono il prossimo passo. Vedi la [roadmap](#roadmap).</sub>
+<sub>Nodoteca è in sviluppo attivo e già in uso ogni giorno: l'app web, la PWA installabile e l'estensione per Chrome funzionano. Il prossimo passo è l'archiviazione intelligente. Vedi la [roadmap](#roadmap).</sub>
 
 ## 🧱 Tecnologie
 
