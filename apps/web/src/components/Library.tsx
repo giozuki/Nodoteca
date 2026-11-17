@@ -2,12 +2,14 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { descendants, type ItemWithCollections, type Uuid } from "@nodoteca/core";
 import { useGraph, useItems, type ItemScope } from "../lib/api.ts";
-import { colorFor } from "../lib/colors.ts";
 import { useI18n } from "../lib/i18n.tsx";
 import { useOnline } from "../lib/offline.ts";
 import { CollectionDialog } from "./CollectionDialog.tsx";
 import { ItemCard } from "./ItemCard.tsx";
 import { ItemDialog } from "./ItemDialog.tsx";
+import { IconEdit, IconPlus } from "./Icons.tsx";
+import { CollectionIcon } from "./CollectionIcon.tsx";
+import { NodeGraph } from "./NodeGraph.tsx";
 
 const INCLUDE_SUB_KEY = "nodoteca.includeSub";
 
@@ -58,21 +60,25 @@ export function Library({ view, onAdd }: { view: View; onAdd: (collectionIds: Uu
     <section className="library">
       <header className="library__header">
         <div>
-          {parents.length > 0 && (
-            <p className="breadcrumbs">
-              {parents.map((p, i) => (
-                <span key={p.id}>
-                  {i > 0 && " · "}
-                  <Link to={`/c/${p.id}`}>{p.name}</Link>
-                </span>
-              ))}
-              {" /"}
-            </p>
-          )}
+          <p className="eyebrow breadcrumbs">
+            {parents.length > 0 ? (
+              <>
+                {parents.map((p, i) => (
+                  <span key={p.id}>
+                    {i > 0 && " · "}
+                    <Link to={`/c/${p.id}`}>{p.name}</Link>
+                  </span>
+                ))}
+                {" /"}
+              </>
+            ) : (
+              t("app.name")
+            )}
+          </p>
           <h1 className="library__title">
-            {collection && <span className="dot dot--lg" style={{ background: colorFor(collection.name, collection.color) }} />}
+            {collection && <CollectionIcon collection={collection} size="lg" />}
             {title}
-            {items.data && <span className="count count--title">{items.data.length}</span>}
+            {items.data && <span className="count count--title">{String(items.data.length).padStart(2, "0")}</span>}
           </h1>
         </div>
         <div className="library__tools">
@@ -95,29 +101,43 @@ export function Library({ view, onAdd }: { view: View; onAdd: (collectionIds: Uu
           )}
           {collection && online && (
             <button className="btn btn--ghost" onClick={() => setEditingCollection(true)}>
-              ✎ {t("collection.edit")}
+              <IconEdit s={15} /> {t("collection.edit")}
             </button>
           )}
         </div>
       </header>
 
-      {items.isLoading && <p className="muted">{t("common.loading")}</p>}
+      {items.isLoading && (
+        <div className="grid skeleton-grid" aria-busy="true" aria-label={t("common.loading")}>
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="card" style={{ "--i": i } as React.CSSProperties}>
+              <div className="card__thumb skeleton" />
+              <div className="card__body">
+                <div className="skeleton" style={{ height: 10, width: "40%" }} />
+                <div className="skeleton" style={{ height: 14, width: "90%" }} />
+                <div className="skeleton" style={{ height: 14, width: "65%" }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {items.error && <p className="error">{t("common.error")}</p>}
 
       {items.data?.length === 0 && (
         <div className="empty">
+          {view !== "search" && <NodeGraph className="empty__art" pulses={false} />}
           <p>{empty}</p>
           {view !== "search" && online && (
             <button className="btn btn--primary" onClick={() => onAdd(id ? [id] : [])}>
-              + {t("item.add")}
+              <IconPlus s={16} /> {t("item.add")}
             </button>
           )}
         </div>
       )}
 
       <div className="grid">
-        {items.data?.map((item) => (
-          <ItemCard key={item.id} item={item} graph={graph} onEdit={() => setEditing(item)} />
+        {items.data?.map((item, i) => (
+          <ItemCard key={item.id} item={item} graph={graph} index={i} onEdit={() => setEditing(item)} />
         ))}
       </div>
 

@@ -31,8 +31,12 @@ export function SettingsMenu({ email, online, onImport, onExport, onSignOut }: P
 
   // Close on a click outside the menu or on Escape.
   useEffect(() => {
+    // A press outside the menu closes it. (The phone backdrop is handled on
+    // click below: closing it on press would let the tap's click land on
+    // whatever was underneath, e.g. open a link.)
     const onPointer = (e: PointerEvent) => {
-      if (ref.current?.open && !ref.current.contains(e.target as Node)) close();
+      const el = ref.current;
+      if (el?.open && !el.contains(e.target as Node)) close();
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && ref.current?.open) {
@@ -54,7 +58,19 @@ export function SettingsMenu({ email, online, onImport, onExport, onSignOut }: P
   };
 
   return (
-    <details className="account" ref={ref}>
+    <details
+      className="account"
+      ref={ref}
+      onClick={(e) => {
+        // On phones the dimmed backdrop is the <details>' own ::before, so a tap
+        // on it targets the <details> itself. The backdrop is still there when the
+        // click fires, so the tap is used up here and never reaches the page.
+        if (e.target === e.currentTarget) {
+          e.preventDefault();
+          close();
+        }
+      }}
+    >
       <summary className="icon-btn" aria-label={t("settings.title")} title={t("settings.title")}>
         {ICON_SETTINGS}
       </summary>

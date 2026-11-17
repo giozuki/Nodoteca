@@ -1,11 +1,19 @@
 import { useMemo, useState } from "react";
-import { parentCandidates, type Collection, type Uuid } from "@nodoteca/core";
+import { lastIcon, normalizeIcon, parentCandidates, type Collection, type Uuid } from "@nodoteca/core";
 import { useCreateCollection, useDeleteCollection, useGraph, useUpdateCollection } from "../lib/api.ts";
 import { COLLECTION_COLORS, colorFor } from "../lib/colors.ts";
 import { useI18n } from "../lib/i18n.tsx";
 import { errorCode } from "../lib/supabase.ts";
 import { CollectionPicker } from "./CollectionPicker.tsx";
+import { CollectionIcon } from "./CollectionIcon.tsx";
 import { Dialog } from "./Dialog.tsx";
+
+// Ten rows of eight, by theme: reading, work, tech, design, media, food, travel, sport, nature, everything else.
+const EMOJI = [
+  ...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(
+    "📚📖🔖📝🎓🧠💡🗞️💼📊📈🗂️📌📎🗓️✅💻🖥️⌨️🛠️⚙️🤖🧪🔒🎨✨🖌️📐🖼️🎭📷🎬🎵🎧🎸🎮📺🎙️🍿📰🍝🍕🍣🥗🍰☕🍷🍳✈️🗺️🏖️🏔️🏠🌍🚲🚗⚽🏃🧘💪🏀🎾🥾❤️🌱🌸🐶🐱🌙☀️🔥🌊⭐🎁🛒💰👶🎉🧩💬",
+  ),
+].map((g) => g.segment);
 
 interface Props {
   /** Edit this collection; omit to create one. */
@@ -25,6 +33,8 @@ export function CollectionDialog({ collection, initialParentIds = [], onClose, o
 
   const [name, setName] = useState(collection?.name ?? "");
   const [color, setColor] = useState<string | null>(collection?.color ?? null);
+  const [icon, setIcon] = useState<string | null>(collection?.icon ?? null);
+  const [customIcon, setCustomIcon] = useState("");
   const [parentIds, setParentIds] = useState<Uuid[]>(
     collection ? (graph.parents.get(collection.id) ?? []) : initialParentIds,
   );
@@ -37,8 +47,8 @@ export function CollectionDialog({ collection, initialParentIds = [], onClose, o
   async function submit() {
     setError(null);
     try {
-      if (collection) await update.mutateAsync({ id: collection.id, name, color, parentIds });
-      else await create.mutateAsync({ name, color, parentIds });
+      if (collection) await update.mutateAsync({ id: collection.id, name, color, icon, parentIds });
+      else await create.mutateAsync({ name, color, icon, parentIds });
       onClose();
     } catch (err) {
       const code = errorCode(err);
@@ -74,10 +84,62 @@ export function CollectionDialog({ collection, initialParentIds = [], onClose, o
         </>
       }
     >
-      <label className="field">
-        <span>{t("collection.name")}</span>
-        <input required autoFocus maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
-      </label>
+      <div className="collection-head">
+        <CollectionIcon collection={{ name: name || "?", color: shown, icon }} size="xl" />
+        <label className="field">
+          <span>{t("collection.name")}</span>
+          <input required autoFocus maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
+        </label>
+      </div>
+
+      <fieldset className="field">
+        <legend>{t("collection.icon")}</legend>
+        <div className="emoji-grid" role="radiogroup" aria-label={t("collection.icon")}>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={!icon}
+            className={`emoji-grid__item emoji-grid__none ${!icon ? "is-active" : ""}`}
+            title={t("collection.iconNone")}
+            aria-label={t("collection.iconNone")}
+            onClick={() => {
+              setIcon(null);
+              setCustomIcon("");
+            }}
+          >
+            <CollectionIcon collection={{ name: name || "?", color: shown, icon: null }} size="sm" />
+          </button>
+          {EMOJI.map((e) => (
+            <button
+              key={e}
+              type="button"
+              role="radio"
+              aria-checked={icon === e}
+              aria-label={e}
+              className={`emoji-grid__item ${icon === e ? "is-active" : ""}`}
+              onClick={() => {
+                setIcon(e);
+                setCustomIcon("");
+              }}
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+        <input
+          className="emoji-custom"
+          value={customIcon}
+          maxLength={40}
+          placeholder={t("collection.iconCustom")}
+          aria-label={t("collection.iconCustom")}
+          onChange={(e) => {
+            setCustomIcon(e.target.value);
+            const picked = lastIcon(e.target.value);
+            if (picked) setIcon(normalizeIcon(picked));
+          }}
+        />
+        {customIcon.trim() && !lastIcon(customIcon) && <small className="error">{t("collection.iconInvalid")}</small>}
+      </fieldset>
 
       <fieldset className="field">
         <legend>{t("collection.color")}</legend>

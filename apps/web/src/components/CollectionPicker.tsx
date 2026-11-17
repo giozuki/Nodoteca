@@ -3,6 +3,7 @@ import type { Collection, Uuid } from "@nodoteca/core";
 import { useCreateCollection } from "../lib/api.ts";
 import { colorFor } from "../lib/colors.ts";
 import { useI18n } from "../lib/i18n.tsx";
+import { CollectionIcon } from "./CollectionIcon.tsx";
 
 interface Props {
   label: string;
@@ -57,7 +58,8 @@ export function CollectionPicker({ label, hint, options, value, onChange, allowC
       <div className="picker" onClick={() => inputRef.current?.focus()}>
         {selected.map((c) => (
           <span key={c.id} className="chip" style={{ "--chip": colorFor(c.name, c.color) } as React.CSSProperties}>
-            {c.name}
+            <CollectionIcon collection={c} size="sm" />
+            <span className="chip__label">{c.name}</span>
             <button
               type="button"
               className="chip__x"
@@ -116,7 +118,7 @@ export function CollectionPicker({ label, hint, options, value, onChange, allowC
                 pick(c);
               }}
             >
-              <span className="dot" style={{ background: colorFor(c.name, c.color) }} />
+              <CollectionIcon collection={c} size="sm" />
               {c.name}
             </li>
           ))}

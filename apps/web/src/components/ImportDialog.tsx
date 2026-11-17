@@ -397,6 +397,8 @@ function Warnings({ warnings }: { warnings: ImportWarning[] }) {
         return t("import.warn.self-parent", { name: w.name });
       case "bad-color":
         return t("import.warn.bad-color", { name: w.name, value: w.value });
+      case "bad-icon":
+        return t("import.warn.bad-icon", { name: w.name, value: w.value });
       case "duplicate-collection":
         return t("import.warn.duplicate-collection", { name: w.name });
     }

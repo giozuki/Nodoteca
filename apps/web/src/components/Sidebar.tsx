@@ -2,9 +2,10 @@ import { useState } from "react";
 import { NavLink } from "react-router";
 import type { CollectionGraph, Uuid } from "@nodoteca/core";
 import { useCounts, useGraph } from "../lib/api.ts";
-import { colorFor } from "../lib/colors.ts";
 import { useI18n } from "../lib/i18n.tsx";
 import { useOnline } from "../lib/offline.ts";
+import { CollectionIcon } from "./CollectionIcon.tsx";
+import { IconAll, IconInbox, IconPlus } from "./Icons.tsx";
 
 const EXPANDED_KEY = "nodoteca.expanded";
 const MAX_DEPTH = 32;
@@ -48,18 +49,18 @@ export function Sidebar({ onNewCollection, onNavigate }: Props) {
   return (
     <nav className="sidebar__nav" aria-label={t("nav.collections")}>
       <NavLink to="/" end className={linkClass} onClick={onNavigate}>
-        <span className="nav-icon" aria-hidden="true">◎</span>
+        <span className="nav-icon"><IconAll s={17} /></span>
         {t("nav.all")}
       </NavLink>
       <NavLink to="/unfiled" className={linkClass} onClick={onNavigate}>
-        <span className="nav-icon" aria-hidden="true">○</span>
+        <span className="nav-icon"><IconInbox s={17} /></span>
         {t("nav.unfiled")}
       </NavLink>
 
       <div className="sidebar__heading">
         <span>{t("nav.collections")}</span>
         <button className="icon-btn" disabled={!online} onClick={onNewCollection} aria-label={t("collection.new")} title={t("collection.new")}>
-          +
+          <IconPlus s={16} />
         </button>
       </div>
 
@@ -121,7 +122,7 @@ function TreeNode({ id, depth, graph, counts, expanded, onToggle, onNavigate }: 
           onClick={onNavigate}
           title={parents.length > 1 ? t("collection.alsoIn", { names: parentNames }) : undefined}
         >
-          <span className="dot" style={{ background: colorFor(c.name, c.color) }} />
+          <CollectionIcon collection={c} />
           <span className="nav-link__label">{c.name}</span>
           {parents.length > 1 && (
             <span className="multi-parent" aria-hidden="true">

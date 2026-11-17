@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase.ts";
 import { useI18n } from "../lib/i18n.tsx";
 import { LanguageSelect } from "./LanguageSelect.tsx";
 import { Logo } from "./Logo.tsx";
+import { NodeGraph } from "./NodeGraph.tsx";
 import { ThemeSelect } from "./ThemeSelect.tsx";
 
 const PENDING_KEY = "nodoteca.pendingEmail";
@@ -78,12 +79,40 @@ export function Login({ redirectTo, sentMessage, compact = false }: Props) {
     setStep("email");
   }
 
+  const tagline = t("app.tagline");
+  const comma = tagline.indexOf(",");
+
   return (
     <main className={`login ${compact ? "login--compact" : ""}`}>
+      {!compact && (
+        <section className="login__hero">
+          <div className="login__brand">
+            <Logo size={30} />
+            <span>{t("app.name")}</span>
+          </div>
+          <div>
+            <p className="login__headline">
+              {comma > 0 ? (
+                <>
+                  {tagline.slice(0, comma + 1)} <em>{tagline.slice(comma + 1).trim()}</em>
+                </>
+              ) : (
+                tagline
+              )}
+            </p>
+            <NodeGraph className="login__graph" />
+          </div>
+          <div className="login__foot" aria-hidden="true">
+            <span>PWA</span>
+            <span>Offline</span>
+            <span>Open source</span>
+          </div>
+        </section>
+      )}
+      <div className={compact ? "" : "login__panel"}>
       <div className="login__card">
         <Logo size={compact ? 40 : 56} />
-        <h1>{t("app.name")}</h1>
-        {!compact && <p className="muted">{t("app.tagline")}</p>}
+        <h1>{compact ? t("app.name") : t("auth.verify")}</h1>
 
         {step === "email" ? (
           <form
@@ -158,6 +187,7 @@ export function Login({ redirectTo, sentMessage, compact = false }: Props) {
           <ThemeSelect />
         </div>
       )}
+      </div>
     </main>
   );
 }

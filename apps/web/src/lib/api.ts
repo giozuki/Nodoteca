@@ -4,6 +4,7 @@ import {
   buildGraph,
   countsLocal,
   findSavedLocal,
+  normalizeIcon,
   queryLocal,
   type Collection,
   type CollectionEdge,
@@ -184,9 +185,9 @@ export function useDeleteItem() {
 export function useCreateCollection() {
   const invalidate = useInvalidateAll();
   return useMutation({
-    mutationFn: async (v: { name: string; color?: string | null; parentIds?: Uuid[] }) => {
+    mutationFn: async (v: { name: string; color?: string | null; icon?: string | null; parentIds?: Uuid[] }) => {
       const created = must(
-        await supabase.from("collections").insert({ name: v.name.trim(), color: v.color ?? null }).select().single(),
+        await supabase.from("collections").insert({ name: v.name.trim(), color: v.color ?? null, icon: normalizeIcon(v.icon) }).select().single(),
       ) as Collection;
       if (v.parentIds?.length) {
         must(await supabase.rpc("set_collection_parents", { p_collection_id: created.id, p_parent_ids: v.parentIds }));
@@ -200,8 +201,8 @@ export function useCreateCollection() {
 export function useUpdateCollection() {
   const invalidate = useInvalidateAll();
   return useMutation({
-    mutationFn: async (v: { id: Uuid; name: string; color: string | null; parentIds: Uuid[] }) => {
-      must(await supabase.from("collections").update({ name: v.name.trim(), color: v.color }).eq("id", v.id).select("id"));
+    mutationFn: async (v: { id: Uuid; name: string; color: string | null; icon: string | null; parentIds: Uuid[] }) => {
+      must(await supabase.from("collections").update({ name: v.name.trim(), color: v.color, icon: normalizeIcon(v.icon) }).eq("id", v.id).select("id"));
       must(await supabase.rpc("set_collection_parents", { p_collection_id: v.id, p_parent_ids: v.parentIds }));
     },
     onSuccess: invalidate,

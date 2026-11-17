@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { NavLink, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import type { Session } from "@supabase/supabase-js";
 import type { Uuid } from "@nodoteca/core";
 import { extractShared } from "@nodoteca/core";
@@ -17,6 +17,7 @@ import { Logo } from "./components/Logo.tsx";
 import { SettingsMenu } from "./components/SettingsMenu.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
 import { SidebarResizer } from "./components/SidebarResizer.tsx";
+import { IconAll, IconCollections, IconOffline, IconPlus, IconSearch } from "./components/Icons.tsx";
 
 /**
  * Offline with an expired access token, Supabase can't refresh it and reports
@@ -85,64 +86,116 @@ function Shell({ session }: { session: Session }) {
   // Close the mobile drawer on navigation.
   useEffect(() => setMenuOpen(false), [location.pathname]);
 
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // "/" or Ctrl/Cmd+K jumps to search from anywhere (not while typing elsewhere).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = e.target instanceof HTMLElement && e.target.closest("input, textarea, select, [contenteditable]");
+      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing)) {
+        if (document.querySelector("dialog[open]")) return;
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  const goHome = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate("/");
+  };
+
   return (
     <div className={`shell ${menuOpen ? "menu-open" : ""}`}>
-      <header className="topbar">
-        <button className="icon-btn topbar__menu" onClick={() => setMenuOpen((o) => !o)} aria-label={t("nav.menu")} aria-expanded={menuOpen}>
-          ☰
-        </button>
-        <a
-          className="brand"
-          href="/"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate("/");
-          }}
-        >
-          <Logo />
-          <span>{t("app.name")}</span>
-        </a>
-        <form
-          className="search"
-          role="search"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const q = search.trim();
-            navigate(q ? `/search?q=${encodeURIComponent(q)}` : "/");
-          }}
-        >
-          <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("search.placeholder")} aria-label={t("search.placeholder")} />
-        </form>
-        <AddButton onAdd={setAdding} />
-        <SettingsMenu
-          email={session.user.email}
-          online={online}
-          onImport={() => setImporting(true)}
-          onExport={() => setExporting(true)}
-          onSignOut={() => {
-            void clearSnapshot();
-            void supabase.auth.signOut();
-          }}
-        />
-      </header>
-
-      <aside className="sidebar">
-        <Sidebar onNewCollection={() => setNewCollection(true)} onNavigate={() => setMenuOpen(false)} />
+      <aside className="sidebar" aria-label={t("nav.collections")}>
+        <div className="sidebar__brand">
+          <a className="brand" href="/" onClick={goHome}>
+            <Logo />
+            <span>{t("app.name")}</span>
+          </a>
+        </div>
+        <div className="sidebar__grabber" aria-hidden="true" />
+        <div className="sidebar__scroll">
+          <Sidebar onNewCollection={() => setNewCollection(true)} onNavigate={() => setMenuOpen(false)} />
+        </div>
       </aside>
       <SidebarResizer />
       <div className="scrim" onClick={() => setMenuOpen(false)} />
 
-      <main className="main">
-        {!online && <OfflineBanner />}
-        <Routes>
-          <Route path="/" element={<Library view="all" onAdd={setAdding} />} />
-          <Route path="/unfiled" element={<Library view="unfiled" onAdd={setAdding} />} />
-          <Route path="/c/:id" element={<Library view="collection" onAdd={setAdding} />} />
-          <Route path="/search" element={<Library view="search" onAdd={setAdding} />} />
-          <Route path="/share" element={<ShareTarget />} />
-          <Route path="*" element={<Library view="all" onAdd={setAdding} />} />
-        </Routes>
-      </main>
+      <div className="main-col">
+        <header className="topbar">
+          <a className="brand topbar__brand" href="/" onClick={goHome} aria-label={t("app.name")}>
+            <Logo size={26} />
+            <span>{t("app.name")}</span>
+          </a>
+          <form
+            className="search"
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const q = search.trim();
+              searchRef.current?.blur();
+              navigate(q ? `/search?q=${encodeURIComponent(q)}` : "/");
+            }}
+          >
+            <span className="search__icon"><IconSearch s={16} /></span>
+            <input
+              ref={searchRef}
+              type="search"
+              enterKeyHint="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("search.placeholder")}
+              aria-label={t("search.placeholder")}
+            />
+            <kbd className="kbd" aria-hidden="true">{IS_MAC ? "⌘" : "Ctrl"} K</kbd>
+          </form>
+          <AddButton onAdd={setAdding} />
+          <SettingsMenu
+            email={session.user.email}
+            online={online}
+            onImport={() => setImporting(true)}
+            onExport={() => setExporting(true)}
+            onSignOut={() => {
+              void clearSnapshot();
+              void supabase.auth.signOut();
+            }}
+          />
+        </header>
+
+        <main className="main">
+          {!online && <OfflineBanner />}
+          <Routes>
+            <Route path="/" element={<Library view="all" onAdd={setAdding} />} />
+            <Route path="/unfiled" element={<Library view="unfiled" onAdd={setAdding} />} />
+            <Route path="/c/:id" element={<Library view="collection" onAdd={setAdding} />} />
+            <Route path="/search" element={<Library view="search" onAdd={setAdding} />} />
+            <Route path="/share" element={<ShareTarget />} />
+            <Route path="*" element={<Library view="all" onAdd={setAdding} />} />
+          </Routes>
+        </main>
+      </div>
+
+      {/* Phone: a floating dock with the three things you do most. */}
+      <nav className="dock" aria-label={t("nav.menu")}>
+        <NavLink to="/" end className={({ isActive }) => `dock__item ${isActive && !menuOpen ? "is-active" : ""}`}>
+          <IconAll s={20} />
+          <span>{t("nav.all")}</span>
+        </NavLink>
+        <AddButton onAdd={setAdding} variant="dock" />
+        <button
+          type="button"
+          className={`dock__item ${menuOpen ? "is-active" : ""}`}
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-expanded={menuOpen}
+        >
+          <IconCollections s={20} />
+          <span>{t("nav.collections")}</span>
+        </button>
+      </nav>
 
       {adding && <ItemDialog initial={{ collectionIds: adding }} onClose={() => setAdding(null)} />}
       {newCollection && <CollectionDialog onClose={() => setNewCollection(false)} />}
@@ -152,23 +205,35 @@ function Shell({ session }: { session: Session }) {
   );
 }
 
+const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
+
 /** "Save link" pre-selects the collection being viewed, if any. */
-function AddButton({ onAdd }: { onAdd: (ids: Uuid[]) => void }) {
+type AddVariant = "topbar" | "dock";
+
+function AddButton({ onAdd, variant = "topbar" }: { onAdd: (ids: Uuid[]) => void; variant?: AddVariant }) {
   const { t } = useI18n();
+  const inner = <AddButtonInner onAdd={onAdd} label={t("item.add")} variant={variant} />;
   return (
     <Routes>
-      <Route path="/c/:id" element={<AddButtonInner onAdd={onAdd} label={t("item.add")} />} />
-      <Route path="*" element={<AddButtonInner onAdd={onAdd} label={t("item.add")} />} />
+      <Route path="/c/:id" element={inner} />
+      <Route path="*" element={inner} />
     </Routes>
   );
 }
 
-function AddButtonInner({ onAdd, label }: { onAdd: (ids: Uuid[]) => void; label: string }) {
+function AddButtonInner({ onAdd, label, variant }: { onAdd: (ids: Uuid[]) => void; label: string; variant: AddVariant }) {
   const { id } = useParams();
   const online = useOnline();
+  if (variant === "dock") {
+    return (
+      <button className="dock__add" disabled={!online} onClick={() => onAdd(id ? [id] : [])} aria-label={label}>
+        <IconPlus s={24} />
+      </button>
+    );
+  }
   return (
     <button className="btn btn--primary topbar__add" disabled={!online} onClick={() => onAdd(id ? [id] : [])}>
-      <span aria-hidden="true">+</span>
+      <IconPlus s={16} />
       <span className="topbar__add-label">{label}</span>
     </button>
   );
@@ -206,7 +271,7 @@ function OfflineBanner() {
     : null;
   return (
     <p className="offline-banner" role="status">
-      <span aria-hidden="true">⚡</span> {when ? t("offline.banner", { time: when }) : t("offline.noCopy")}
+      <IconOffline s={18} /> <span>{when ? t("offline.banner", { time: when }) : t("offline.noCopy")}</span>
     </p>
   );
 }

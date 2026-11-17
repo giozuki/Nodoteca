@@ -1,5 +1,6 @@
 import { useEffect, useRef, type FormEvent, type ReactNode } from "react";
 import { useI18n } from "../lib/i18n.tsx";
+import { IconClose } from "./Icons.tsx";
 
 interface Props {
   title: string;
@@ -21,7 +22,11 @@ export function Dialog({ title, onClose, onSubmit, children, footer }: Props) {
 
   useEffect(() => {
     const el = ref.current;
-    if (el && !el.open) el.showModal();
+    if (el && !el.open) {
+      el.showModal();
+      // showModal focuses the first control (the close button): start on the first field instead.
+      el.querySelector<HTMLElement>("input:not([readonly]):not([type=file]):not([type=hidden]), textarea")?.focus();
+    }
     return () => el?.close();
   }, []);
 
@@ -30,7 +35,7 @@ export function Dialog({ title, onClose, onSubmit, children, footer }: Props) {
       <header className="dialog__header">
         <h2>{title}</h2>
         <button type="button" className="icon-btn" onClick={onClose} aria-label={t("common.close")}>
-          ✕
+          <IconClose s={18} />
         </button>
       </header>
       <div className="dialog__body">{children}</div>
