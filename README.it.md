@@ -20,6 +20,10 @@
   <a href="README.md">🇬🇧 English</a> · 🇮🇹 Italiano
 </p>
 
+<p align="center">
+  <img src="docs/screenshot.png" alt="Nodoteca su desktop (tema scuro) e su telefono (tema chiaro): una raccolta di link, ognuno archiviato in più raccolte" width="100%">
+</p>
+
 ---
 
 ## 💡 Perché

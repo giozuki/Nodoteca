@@ -16,6 +16,7 @@
     "dev": "npm run dev -w @nodoteca/web",
     "build": "npm run build -w @nodoteca/web",
     "build:extension": "npm run build -w @nodoteca/extension",
+    "screenshot": "node apps/web/screenshots/capture.mjs",
     "test": "npm run test:core && npm run test:db",
     "test:core": "node --test \"packages/core/src/**/*.test.ts\"",
     "test:db": "node supabase/tests/schema.test.mjs",

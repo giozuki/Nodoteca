@@ -20,6 +20,10 @@
   🇬🇧 English · <a href="README.it.md">🇮🇹 Italiano</a>
 </p>
 
+<p align="center">
+  <img src="docs/screenshot.png" alt="Nodoteca on desktop (dark theme) and on a phone (light theme): a collection of links, each filed in several collections" width="100%">
+</p>
+
 ---
 
 ## 💡 Why
