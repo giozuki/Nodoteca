@@ -9,9 +9,9 @@ no ids, no folder paths.
   "format": "nodoteca-import",
   "version": 1,
   "collections": [
-    { "name": "Music" },
+    { "name": "Music", "icon": "🎵" },
     { "name": "Genre X", "parents": ["Music"] },
-    { "name": "Movies", "color": "#FF7A59" },
+    { "name": "Movies", "icon": "🎬", "color": "#FF7A59" },
     { "name": "Soundtracks" },
     { "name": "Movie Z", "parents": ["Movies", "Soundtracks"], "description": "Edits and scenes" }
   ],
@@ -46,13 +46,14 @@ A machine-readable version of these rules is in
 |---|---|---|
 | `name` | yes | Up to 120 characters. Names are **case-insensitive**: `"Rock"` and `"rock"` are the same collection. |
 | `parents` | no | Names of the collections this one sits inside. **As many as you want**: a collection can live in several places at once. |
+| `icon` | no | One emoji, e.g. `"🎬"`. Shown in place of the collection's initial. |
 | `color` | no | `#rrggbb`, e.g. `"#3DD6B5"`. |
 | `description` | no | Up to 2000 characters. |
 
 Declaring a collection is optional: any name used in a link's `collections`
 or in `parents` is created automatically (the import preview lists them, in
-case of a typo). Declare a collection when you want to give it parents, a
-color or a description, or to create it even if no link uses it yet.
+case of a typo). Declare a collection when you want to give it parents, an
+emoji, a color or a description, or to create it even if no link uses it yet.
 
 ## Links
 
@@ -84,6 +85,7 @@ what it found before anything is written:
 | A collection listed twice | Merges the two. |
 | A collection inside itself, or parents that form a loop (A in B, B in A) | Skips the parent that would close the loop. |
 | A color that isn't `#rrggbb` | Ignores the color. |
+| An `icon` that isn't exactly one emoji | Ignores the icon. |
 
 Existing collections with the same name are reused, never duplicated.
 

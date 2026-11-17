@@ -35,7 +35,7 @@ export async function runImport(plan: ImportPlan, onProgress: (done: number, tot
   for (const c of existing) ids.set(collectionKey(c.name), c.id);
   const missing = [...plan.collections]
     .filter(([key]) => !ids.has(key))
-    .map(([key, name]) => ({ name, color: plan.details.get(key)?.color ?? null, description: plan.details.get(key)?.description ?? null }));
+    .map(([key, name]) => ({ name, color: plan.details.get(key)?.color ?? null, icon: plan.details.get(key)?.icon ?? null, description: plan.details.get(key)?.description ?? null }));
   if (missing.length) {
     const created = must(await supabase.from("collections").insert(missing).select("id, name")) as { id: Uuid; name: string }[];
     for (const c of created) ids.set(collectionKey(c.name), c.id);

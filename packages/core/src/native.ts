@@ -1,4 +1,5 @@
 import type { ImportEntry } from "./import.ts";
+import { normalizeIcon } from "./icon.ts";
 
 /**
  * The native import format: plain JSON, collections referred to by name,
@@ -10,7 +11,7 @@ export const NATIVE_FORMAT = "nodoteca-import";
 export interface NativeImportFile {
   format: typeof NATIVE_FORMAT;
   version?: 1;
-  collections?: { name: string; parents?: string[]; color?: string; description?: string }[];
+  collections?: { name: string; parents?: string[]; color?: string; icon?: string; description?: string }[];
   links: {
     url: string;
     title?: string;
@@ -30,6 +31,7 @@ export type ImportWarning =
   | { code: "cycle-removed"; parent: string; child: string }
   | { code: "self-parent"; name: string }
   | { code: "bad-color"; name: string; value: string }
+  | { code: "bad-icon"; name: string; value: string }
   | { code: "duplicate-collection"; name: string };
 
 /** A problem that makes the file unusable. */
@@ -47,6 +49,8 @@ export class ImportFormatError extends Error {
 
 export interface CollectionDetails {
   color?: string;
+  /** A single emoji. */
+  icon?: string;
   description?: string;
 }
 
@@ -80,11 +84,15 @@ export function parseNativeJson(data: unknown): NativeParsed {
     const k = key(name);
     if (declared.has(k)) warnings.push({ code: "duplicate-collection", name });
     declared.set(k, declared.get(k) ?? name);
-    const c = raw as { parents?: unknown; color?: unknown; description?: unknown };
+    const c = raw as { parents?: unknown; color?: unknown; icon?: unknown; description?: unknown };
     const d: CollectionDetails = {};
     const color = str(c.color);
     if (color && /^#[0-9a-f]{6}$/i.test(color)) d.color = color;
     else if (color) warnings.push({ code: "bad-color", name, value: color });
+    const rawIcon = str(c.icon);
+    const icon = normalizeIcon(rawIcon);
+    if (icon) d.icon = icon;
+    else if (rawIcon) warnings.push({ code: "bad-icon", name, value: rawIcon });
     const description = str(c.description);
     if (description) d.description = description.slice(0, 2000);
     details.set(k, { ...details.get(k), ...d });

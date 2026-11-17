@@ -1,6 +1,7 @@
 import { EXPORT_FORMAT, type NodotecaExport } from "./export.ts";
 import { ImportFormatError, parseNativeJson, type CollectionDetails, type ImportWarning } from "./native.ts";
 import { normalizeUrl } from "./url.ts";
+import { normalizeIcon } from "./icon.ts";
 
 /** One link read from an export file, before it becomes an item. */
 export interface ImportEntry {
@@ -204,8 +205,10 @@ export function parseNodotecaJson(input: string | unknown): ParsedImport {
   for (const c of data.collections) {
     const d: CollectionDetails = {};
     if (c.color) d.color = c.color;
+    const icon = normalizeIcon(c.icon);
+    if (icon) d.icon = icon;
     if (c.description) d.description = c.description;
-    if (d.color || d.description) details.set(collectionKey(c.name), d);
+    if (d.color || d.icon || d.description) details.set(collectionKey(c.name), d);
   }
   const edges: [string, string][] = [];
   for (const c of data.collections) {

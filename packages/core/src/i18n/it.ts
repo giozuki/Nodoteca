@@ -51,6 +51,10 @@ export const it: Messages = {
   "collection.edit": "Modifica raccolta",
   "collection.name": "Nome",
   "collection.color": "Colore",
+  "collection.icon": "Emoji",
+  "collection.iconCustom": "Oppure scrivi o incolla un'emoji qualsiasi",
+  "collection.iconNone": "Nessuna emoji",
+  "collection.iconInvalid": "Non è una singola emoji.",
   "collection.parents": "Dentro a",
   "collection.parentsHint": "Una raccolta può stare dentro a più raccolte.",
   "collection.addTo": "Raccolte",
@@ -140,6 +144,7 @@ export const it: Messages = {
   "import.warn.cycle-removed": "“{child}” dentro “{parent}” creerebbe un giro chiuso: quel genitore viene saltato.",
   "import.warn.self-parent": "“{name}” non può stare dentro sé stessa: ignorato.",
   "import.warn.bad-color": "“{name}”: il colore “{value}” non è nel formato #rrggbb, ignorato.",
+  "import.warn.bad-icon": "“{name}”: l'icona “{value}” non è una singola emoji, ignorata.",
   "import.warn.duplicate-collection": "“{name}” è elencata più volte: unita in una sola.",
 
   "export.menu": "Esporta",

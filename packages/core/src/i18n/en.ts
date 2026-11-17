@@ -54,6 +54,10 @@ export const en = {
   "collection.edit": "Edit collection",
   "collection.name": "Name",
   "collection.color": "Color",
+  "collection.icon": "Emoji",
+  "collection.iconCustom": "Or type or paste any emoji",
+  "collection.iconNone": "No emoji",
+  "collection.iconInvalid": "That isn't a single emoji.",
   "collection.parents": "Inside",
   "collection.parentsHint": "A collection can sit inside several others.",
   "collection.addTo": "Collections",
@@ -143,6 +147,7 @@ export const en = {
   "import.warn.cycle-removed": "“{child}” inside “{parent}” would make a loop: that parent is skipped.",
   "import.warn.self-parent": "“{name}” can't be inside itself: ignored.",
   "import.warn.bad-color": "“{name}”: color “{value}” isn't in #rrggbb form, ignored.",
+  "import.warn.bad-icon": "“{name}”: icon “{value}” isn't a single emoji, ignored.",
   "import.warn.duplicate-collection": "“{name}” is listed more than once: merged.",
 
   "export.menu": "Export",
