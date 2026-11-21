@@ -20,7 +20,7 @@ export const en = {
   "auth.verify": "Sign in",
   "auth.invalidCode": "That code is wrong or expired. Request a new one.",
 
-  "share.noUrl": "No link found in what was shared.",
+  "share.noUrl": "Nothing to save in what was shared: no link and no file.",
 
   "ext.saved": "Saved!",
   "ext.open": "Open Nodoteca",

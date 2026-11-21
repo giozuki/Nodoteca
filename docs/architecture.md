@@ -117,6 +117,11 @@ that only the project owner can write. The bucket's own `file_size_limit`
 (50 MB, the most Supabase's free plan accepts per upload) is the ceiling
 above every per-user limit. At most 20 files per item.
 
+Files can also arrive from the **Android share sheet**: the manifest's
+`share_target` is a multipart POST, which the service worker (`public/sw.js`)
+keeps in a cache and hands to the app through `/share?shared=<id>`
+(`src/lib/share.ts`). Shared text and links travel the same way.
+
 The JSON export describes files (name, size, type, hash) but does not contain
 them, and the offline copy shows them without being able to open them.
 

@@ -6,6 +6,7 @@ import { extractShared } from "@nodoteca/core";
 import { useRealtimeSync } from "./lib/api.ts";
 import { clearSnapshot, useOfflineSync, useOnline, useSavedAt } from "./lib/offline.ts";
 import { useI18n } from "./lib/i18n.tsx";
+import { takeShared, type ReceivedShare } from "./lib/share.ts";
 import { supabase } from "./lib/supabase.ts";
 import { CollectionDialog } from "./components/CollectionDialog.tsx";
 import { ExportDialog } from "./components/ExportDialog.tsx";
@@ -241,17 +242,28 @@ function AddButtonInner({ onAdd, label, variant }: { onAdd: (ids: Uuid[]) => voi
 }
 
 /**
- * Android share sheet lands here (manifest share_target): /share?title=…&text=…&url=…
+ * Android share sheet lands here (manifest share_target). The service worker
+ * keeps the shared form and redirects to /share?shared=<id>; installs whose
+ * manifest predates files still send /share?title=…&text=…&url=…
  * Opens the save dialog pre-filled, then goes back to the library.
  */
 function ShareTarget() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const shared = extractShared({ url: params.get("url"), text: params.get("text"), title: params.get("title") });
+  const sharedId = params.get("shared");
+  const [received, setReceived] = useState<ReceivedShare | null | undefined>(sharedId ? undefined : null);
+  useEffect(() => {
+    if (sharedId) void takeShared(sharedId).then(setReceived);
+  }, [sharedId]);
   const done = () => navigate("/", { replace: true });
 
-  if (!shared.url) {
+  if (received === undefined) return <p className="muted">{t("common.loading")}</p>;
+  const source = received ?? { url: params.get("url"), text: params.get("text"), title: params.get("title"), files: [] };
+  const shared = extractShared(source);
+  const files = source.files;
+
+  if (!shared.url && files.length === 0) {
     return (
       <div className="empty">
         <p>{t("share.noUrl")}</p>
@@ -261,7 +273,7 @@ function ShareTarget() {
       </div>
     );
   }
-  return <ItemDialog initial={{ url: shared.url, title: shared.title ?? undefined }} onClose={done} />;
+  return <ItemDialog initial={{ url: shared.url ?? undefined, title: shared.title ?? undefined, files }} onClose={done} />;
 }
 
 function OfflineBanner() {

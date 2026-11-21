@@ -56,7 +56,7 @@ one parent.
 | 📎 **Keep a copy** | Attach the PDF, picture or video behind a link, so it stays yours even if the page changes or disappears. A file can also be saved on its own, with a title, notes and collections, like a link. |
 | 🔄 **Sync everywhere** | One account, every device. Changes show up in real time. |
 | 🔎 **Search as you think** | Type any part of a word: "anthr" finds "Anthropic". Searches titles, notes, sites, URLs and file names. |
-| 📲 **Save from anywhere** | Install it as an app, share links to it from any Android app, or save the current tab with the Chrome extension. |
+| 📲 **Save from anywhere** | Install it as an app, share links and files to it from any Android app, or save the current tab with the Chrome extension. |
 | 🔒 **Private by default** | Row Level Security in Postgres: you are the only one who can see your data. Files sit in a private bucket and open through links that expire. |
 | 🌍 **Multilingual** | English and Italian to start, and adding a language means adding one file. |
 | 🌗 **Light and dark** | Follows your system, or pick one. |

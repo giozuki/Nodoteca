@@ -63,7 +63,8 @@ export function ItemDialog({ item, initial, addFiles, onClose }: Props) {
   const usage = useStorageUsage(online);
   const fmt = (n: number) => formatBytes(n, locale);
 
-  const [mode, setMode] = useState<Mode>(item ? (item.url ? "link" : "file") : initial?.files?.length ? "file" : "link");
+  // Files with no link: a file item. Files shared along with a link become its attachments.
+  const [mode, setMode] = useState<Mode>(item ? (item.url ? "link" : "file") : initial?.files?.length && !initial.url ? "file" : "link");
   const [url, setUrl] = useState(item?.url ?? initial?.url ?? "");
   const [title, setTitle] = useState(item?.title ?? initial?.title ?? "");
   const [note, setNote] = useState(item?.note ?? "");

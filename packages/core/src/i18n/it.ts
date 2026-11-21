@@ -17,7 +17,7 @@ export const it: Messages = {
   "auth.verify": "Accedi",
   "auth.invalidCode": "Codice errato o scaduto. Richiedine uno nuovo.",
 
-  "share.noUrl": "Nessun link trovato in ciò che hai condiviso.",
+  "share.noUrl": "Niente da salvare in ciò che hai condiviso: nessun link e nessun file.",
 
   "ext.saved": "Salvato!",
   "ext.open": "Apri Nodoteca",

@@ -56,7 +56,7 @@ vuoi. Anche le raccolte sono nodi, quindi possono avere più di un genitore.
 | 📎 **Conservi una copia** | Allega il PDF, l'immagine o il video a cui punta un link: resta tuo anche se la pagina cambia o sparisce. Puoi anche salvare un file da solo, con titolo, note e raccolte, come un link. |
 | 🔄 **Sincronizzazione ovunque** | Un account per tutti i dispositivi. Le modifiche compaiono in tempo reale. |
 | 🔎 **Ricerca per frammenti** | Basta un pezzo di parola: "anthr" trova "Anthropic". Cerca in titoli, note, siti, URL e nomi dei file. |
-| 📲 **Salvi da ovunque** | Installala come app, condividi i link da qualsiasi app Android, o salva la scheda aperta con l'estensione Chrome. |
+| 📲 **Salvi da ovunque** | Installala come app, condividi link e file da qualsiasi app Android, o salva la scheda aperta con l'estensione Chrome. |
 | 🔒 **Privato di default** | Row Level Security su Postgres: i tuoi dati li vedi solo tu. I file stanno in uno spazio privato e si aprono con link che scadono. |
 | 🌍 **Multilingua** | Inglese e italiano per cominciare; per aggiungere una lingua basta un file. |
 | 🌗 **Chiaro e scuro** | Segue il sistema, oppure scegli tu. |
