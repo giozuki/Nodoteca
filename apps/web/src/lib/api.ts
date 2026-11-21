@@ -8,13 +8,17 @@ import {
   queryLocal,
   type Collection,
   type CollectionEdge,
+  type ItemFile,
   type ItemWithCollections,
   type LinkPreview,
+  type NewItemFile,
   type SavedMatch,
   type ItemScope,
   type SaveItemInput,
+  type StorageUsage,
   type Uuid,
 } from "@nodoteca/core";
+import { removeObjects, storagePaths, uploadFiles, type Progress } from "./files.ts";
 import { scheduleSync, withOffline } from "./offline.ts";
 import { must, supabase } from "./supabase.ts";
 
@@ -26,6 +30,7 @@ export const keys = {
   collections: ["collections"] as const,
   edges: ["edges"] as const,
   counts: ["counts"] as const,
+  storage: ["storage"] as const,
   items: (scope: ItemScope) => ["items", scope] as const,
 };
 
@@ -75,7 +80,7 @@ export function useCounts() {
   });
 }
 
-const ITEM_COLUMNS = "*, item_collections(collection_id)";
+const ITEM_COLUMNS = "*, item_collections(collection_id), item_files(*)";
 const PAGE = 500;
 
 export function useItems(scope: ItemScope) {
@@ -119,6 +124,19 @@ export async function findSaved(url: string): Promise<SavedMatch[]> {
   );
 }
 
+/** Space used by files, and the user's limits. */
+export function useStorageUsage(enabled = true) {
+  return useQuery({
+    queryKey: keys.storage,
+    enabled,
+    queryFn: async (): Promise<StorageUsage> => {
+      const rows = must(await supabase.rpc("storage_usage")) as StorageUsage[];
+      const r = rows[0];
+      return { used_bytes: Number(r?.used_bytes ?? 0), max_file_bytes: Number(r?.max_file_bytes ?? 0), max_total_bytes: Number(r?.max_total_bytes ?? 0) };
+    },
+  });
+}
+
 export async function fetchPreview(url: string): Promise<LinkPreview | null> {
   const { data, error } = await supabase.functions.invoke<LinkPreview>("link-preview", { body: { url } });
   return error ? null : data;
@@ -135,20 +153,77 @@ function useInvalidateAll() {
   };
 }
 
+/** Extra arguments to save files with an item: they are uploaded first, then recorded. */
+interface WithFiles {
+  files?: readonly File[];
+  onProgress?: Progress;
+}
+
+/** Uploads files, records them with `record`, and removes the uploads if recording fails. */
+async function uploadAndRecord<T>(files: readonly File[], onProgress: Progress | undefined, record: (uploaded: NewItemFile[]) => Promise<T>): Promise<T> {
+  const uploaded = await uploadFiles(files, onProgress);
+  try {
+    return await record(uploaded);
+  } catch (err) {
+    await removeObjects(uploaded.flatMap((f) => (f.thumb_path ? [f.path, f.thumb_path] : [f.path])));
+    throw err;
+  }
+}
+
 export function useSaveItem() {
   const invalidate = useInvalidateAll();
   return useMutation({
-    mutationFn: async (input: SaveItemInput) => must(await supabase.rpc("save_item", input)),
+    mutationFn: ({ files = [], onProgress, ...input }: SaveItemInput & WithFiles) =>
+      uploadAndRecord(files, onProgress, async (uploaded) => must(await supabase.rpc("save_item", { ...input, p_files: uploaded }))),
     onSuccess: invalidate,
   });
+}
+
+export interface ItemUpdate extends WithFiles {
+  id: Uuid;
+  title: string | null;
+  note: string | null;
+  collectionIds: Uuid[];
+  /** Set a link on an item that had none, with its preview. */
+  link?: { url: string; preview: LinkPreview | null };
+  /** Files to forget (their objects are deleted from Storage). */
+  removeFileIds?: Uuid[];
+  /** New order of the files the item keeps; new files go after them. */
+  fileOrder?: Uuid[];
 }
 
 export function useUpdateItem() {
   const invalidate = useInvalidateAll();
   return useMutation({
-    mutationFn: async (v: { id: Uuid; title: string | null; note: string | null; collectionIds: Uuid[] }) => {
-      must(await supabase.from("items").update({ title: v.title, note: v.note }).eq("id", v.id).select("id"));
+    mutationFn: async (v: ItemUpdate) => {
+      const patch: Record<string, unknown> = { title: v.title, note: v.note };
+      if (v.link) {
+        const p = v.link.preview;
+        Object.assign(patch, {
+          url: v.link.url,
+          description: p?.description ?? null,
+          thumbnail_url: p?.thumbnail_url ?? null,
+          site_name: p?.site_name ?? null,
+          ...(p?.metadata && { metadata: p.metadata }),
+        });
+      }
+      must(await supabase.from("items").update(patch).eq("id", v.id).select("id"));
       must(await supabase.rpc("set_item_collections", { p_item_id: v.id, p_collection_ids: v.collectionIds }));
+
+      if (v.fileOrder?.length) {
+        must(await supabase.rpc("set_item_file_order", { p_item_id: v.id, p_file_ids: v.fileOrder }));
+      }
+      // Add before removing: an item with no link must never be left without files.
+      if (v.files?.length) {
+        await uploadAndRecord(v.files, v.onProgress, async (uploaded) =>
+          must(await supabase.rpc("add_item_files", { p_item_id: v.id, p_files: uploaded })),
+        );
+      }
+      const gone: string[] = [];
+      for (const id of v.removeFileIds ?? []) {
+        gone.push(...((must(await supabase.rpc("remove_item_file", { p_file_id: id })) as string[] | null) ?? []));
+      }
+      await removeObjects(gone);
     },
     onSuccess: invalidate,
   });
@@ -159,6 +234,7 @@ export function useRefreshPreview() {
   const invalidate = useInvalidateAll();
   return useMutation({
     mutationFn: async (item: ItemWithCollections) => {
+      if (!item.url) throw new Error("no-link");
       const p = await fetchPreview(item.url);
       if (!p || (!p.thumbnail_url && !p.title && !p.description)) throw new Error("no-preview");
       const patch: Record<string, unknown> = {
@@ -177,7 +253,13 @@ export function useRefreshPreview() {
 export function useDeleteItem() {
   const invalidate = useInvalidateAll();
   return useMutation({
-    mutationFn: async (id: Uuid) => must(await supabase.from("items").delete().eq("id", id).select("id")),
+    mutationFn: async (item: ItemWithCollections) => {
+      // Read the file rows again: the list on screen may be out of date.
+      const files = must(await supabase.from("item_files").select("*").eq("item_id", item.id)) as ItemFile[];
+      must(await supabase.from("items").delete().eq("id", item.id).select("id"));
+      // Row first, objects after: if this fails, a leftover object only costs space.
+      await removeObjects(storagePaths(files));
+    },
     onSuccess: invalidate,
   });
 }
@@ -219,7 +301,7 @@ export function useDeleteCollection() {
 
 // --- Realtime -----------------------------------------------------------------
 
-const SYNCED_TABLES = ["items", "collections", "item_collections", "collection_edges"] as const;
+const SYNCED_TABLES = ["items", "collections", "item_collections", "collection_edges", "item_files"] as const;
 
 /** Refetch when another device (or tab) changes something. */
 export function useRealtimeSync(userId: string) {

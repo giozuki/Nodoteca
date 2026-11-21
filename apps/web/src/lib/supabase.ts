@@ -7,6 +7,10 @@ if (!url || !key) {
   throw new Error("Missing VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY. Copy .env.example to .env at the repo root.");
 }
 
+/** Project URL and publishable key, for the few calls made without supabase-js (upload progress). */
+export const SUPABASE_URL: string = url;
+export const SUPABASE_KEY: string = key;
+
 export const supabase = createClient(url, key, {
   auth: {
     persistSession: true,

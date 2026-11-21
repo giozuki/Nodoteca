@@ -217,8 +217,10 @@ export function parseNodotecaJson(input: string | unknown): ParsedImport {
       if (parent) edges.push([parent, c.name]);
     }
   }
+  // Items made only of files have no link, and file contents are not in the
+  // backup: they cannot be restored from it.
   const entries = data.items
-    .filter((i) => typeof i.url === "string" && /^https?:\/\//i.test(i.url))
+    .filter((i): i is typeof i & { url: string } => typeof i.url === "string" && /^https?:\/\//i.test(i.url))
     .map(
       (i): ImportEntry => ({
         url: i.url,

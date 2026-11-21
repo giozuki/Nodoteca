@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { descendants, type ItemWithCollections, type Uuid } from "@nodoteca/core";
 import { useGraph, useItems, type ItemScope } from "../lib/api.ts";
+import { hasDraggedFiles, useFileThumbs } from "../lib/files.ts";
 import { useI18n } from "../lib/i18n.tsx";
 import { useOnline } from "../lib/offline.ts";
 import { CollectionDialog } from "./CollectionDialog.tsx";
@@ -15,14 +16,18 @@ const INCLUDE_SUB_KEY = "nodoteca.includeSub";
 
 export type View = "all" | "unfiled" | "collection" | "search";
 
+/** Start saving a new item in these collections, optionally with files (dropped or pasted). */
+export type AddHandler = (collectionIds: Uuid[], files?: File[]) => void;
+
 /** The main pane: a list of items for the current view. */
-export function Library({ view, onAdd }: { view: View; onAdd: (collectionIds: Uuid[]) => void }) {
+export function Library({ view, onAdd }: { view: View; onAdd: AddHandler }) {
   const { t } = useI18n();
   const { id } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { graph } = useGraph();
-  const [editing, setEditing] = useState<ItemWithCollections | null>(null);
+  const [editing, setEditing] = useState<{ item: ItemWithCollections; addFiles?: File[] } | null>(null);
+  const [dropping, setDropping] = useState(false);
   const [editingCollection, setEditingCollection] = useState(false);
   const [includeSub, setIncludeSub] = useState(() => {
     try {
@@ -47,6 +52,23 @@ export function Library({ view, onAdd }: { view: View; onAdd: (collectionIds: Uu
 
   const items = useItems(scope);
   const online = useOnline();
+  const thumbs = useFileThumbs(items.data, online);
+  const here = id ? [id] : [];
+
+  // Paste a file or a screenshot anywhere (outside fields): save it as a new item here.
+  useEffect(() => {
+    if (!online) return;
+    const onPaste = (e: ClipboardEvent) => {
+      if (document.querySelector("dialog[open]")) return;
+      if (e.target instanceof HTMLElement && e.target.closest("input, textarea, [contenteditable]")) return;
+      const files = [...(e.clipboardData?.files ?? [])];
+      if (!files.length) return;
+      e.preventDefault();
+      onAdd(id ? [id] : [], files);
+    };
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [online, id, onAdd]);
 
   const title =
     view === "collection" ? (collection?.name ?? "") : view === "search" ? t("search.results", { query }) : view === "unfiled" ? t("nav.unfiled") : t("nav.all");
@@ -57,7 +79,25 @@ export function Library({ view, onAdd }: { view: View; onAdd: (collectionIds: Uu
   const parents = id ? (graph.parents.get(id) ?? []).map((p) => graph.byId.get(p)).filter((c) => !!c) : [];
 
   return (
-    <section className="library">
+    <section
+      className="library"
+      // Files dropped on the list (not on a card) become a new item here.
+      onDragOver={(e) => {
+        if (!online || !hasDraggedFiles(e) || document.querySelector("dialog[open]")) return;
+        e.preventDefault();
+        setDropping(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropping(false);
+      }}
+      onDrop={(e) => {
+        if (!hasDraggedFiles(e)) return;
+        e.preventDefault();
+        setDropping(false);
+        const files = [...e.dataTransfer.files];
+        if (files.length && online) onAdd(here, files);
+      }}
+    >
       <header className="library__header">
         <div>
           <p className="eyebrow breadcrumbs">
@@ -128,7 +168,7 @@ export function Library({ view, onAdd }: { view: View; onAdd: (collectionIds: Uu
           {view !== "search" && <NodeGraph className="empty__art" pulses={false} />}
           <p>{empty}</p>
           {view !== "search" && online && (
-            <button className="btn btn--primary" onClick={() => onAdd(id ? [id] : [])}>
+            <button className="btn btn--primary" onClick={() => onAdd(here)}>
               <IconPlus s={16} /> {t("item.add")}
             </button>
           )}
@@ -137,11 +177,27 @@ export function Library({ view, onAdd }: { view: View; onAdd: (collectionIds: Uu
 
       <div className="grid">
         {items.data?.map((item, i) => (
-          <ItemCard key={item.id} item={item} graph={graph} index={i} onEdit={() => setEditing(item)} />
+          <ItemCard
+            key={item.id}
+            item={item}
+            graph={graph}
+            thumbs={thumbs}
+            index={i}
+            onEdit={() => setEditing({ item })}
+            onDropFiles={(files) => {
+              setDropping(false);
+              setEditing({ item, addFiles: files });
+            }}
+          />
         ))}
       </div>
 
-      {editing && <ItemDialog item={editing} onClose={() => setEditing(null)} />}
+      {editing && <ItemDialog item={editing.item} addFiles={editing.addFiles} onClose={() => setEditing(null)} />}
+      {dropping && (
+        <div className="drop-overlay" aria-hidden="true">
+          {t("files.dropToSave")}
+        </div>
+      )}
       {editingCollection && collection && (
         <CollectionDialog collection={collection} onClose={() => setEditingCollection(false)} onDeleted={() => navigate("/")} />
       )}

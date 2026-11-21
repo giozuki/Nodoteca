@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import type { Session } from "@supabase/supabase-js";
 import type { Uuid } from "@nodoteca/core";
@@ -11,7 +11,7 @@ import { CollectionDialog } from "./components/CollectionDialog.tsx";
 import { ExportDialog } from "./components/ExportDialog.tsx";
 import { ImportDialog } from "./components/ImportDialog.tsx";
 import { ItemDialog } from "./components/ItemDialog.tsx";
-import { Library } from "./components/Library.tsx";
+import { Library, type AddHandler } from "./components/Library.tsx";
 import { Login } from "./components/Login.tsx";
 import { Logo } from "./components/Logo.tsx";
 import { SettingsMenu } from "./components/SettingsMenu.tsx";
@@ -73,7 +73,8 @@ function Shell({ session }: { session: Session }) {
   const location = useLocation();
   const [params] = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [adding, setAdding] = useState<Uuid[] | null>(null);
+  const [adding, setAddingState] = useState<{ collectionIds: Uuid[]; files?: File[] } | null>(null);
+  const setAdding = useCallback<AddHandler>((collectionIds, files) => setAddingState({ collectionIds, files }), []);
   const [newCollection, setNewCollection] = useState(false);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -197,7 +198,7 @@ function Shell({ session }: { session: Session }) {
         </button>
       </nav>
 
-      {adding && <ItemDialog initial={{ collectionIds: adding }} onClose={() => setAdding(null)} />}
+      {adding && <ItemDialog initial={adding} onClose={() => setAddingState(null)} />}
       {newCollection && <CollectionDialog onClose={() => setNewCollection(false)} />}
       {importing && <ImportDialog onClose={() => setImporting(false)} />}
       {exporting && <ExportDialog onClose={() => setExporting(false)} />}

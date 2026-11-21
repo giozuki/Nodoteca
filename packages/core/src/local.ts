@@ -1,4 +1,5 @@
 import type { LibrarySnapshot } from "./export.ts";
+import { filesOf } from "./files.ts";
 import type { ItemWithCollections, Uuid } from "./types.ts";
 
 /** Which items a list shows. Shared by the online queries and the offline copy. */
@@ -12,14 +13,14 @@ const newestFirst = (a: ItemWithCollections, b: ItemWithCollections) => b.create
 
 /**
  * Same rules as the search_items() SQL function: every word must appear
- * (any case, any order) in title, note, site, URL or description; matches in
- * the title come first, then newest.
+ * (any case, any order) in title, note, site, URL, description or a file
+ * name; matches in the title come first, then newest.
  */
 export function searchLocal(items: readonly ItemWithCollections[], query: string): ItemWithCollections[] {
   const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
   const haystack = (i: ItemWithCollections) =>
-    [i.title, i.note, i.site_name, i.url, i.description].map((s) => s ?? "").join(" ").toLocaleLowerCase();
+    [i.title, i.note, i.site_name, i.url, i.description, ...filesOf(i).map((f) => f.name)].map((s) => s ?? "").join(" ").toLocaleLowerCase();
   const inTitle = (i: ItemWithCollections) => {
     const t = (i.title ?? "").toLocaleLowerCase();
     return words.every((w) => t.includes(w));

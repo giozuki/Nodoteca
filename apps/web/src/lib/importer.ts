@@ -8,8 +8,8 @@ const ITEM_BATCH = 250;
 export async function fetchExistingUrls(): Promise<Set<string>> {
   const urls = new Set<string>();
   for (let from = 0; ; from += PAGE) {
-    const rows = must(await supabase.from("items").select("url").range(from, from + PAGE - 1)) as { url: string }[];
-    for (const r of rows) urls.add(normalizeUrl(r.url));
+    const rows = must(await supabase.from("items").select("url").order("id").range(from, from + PAGE - 1)) as { url: string | null }[];
+    for (const r of rows) if (r.url) urls.add(normalizeUrl(r.url));
     if (rows.length < PAGE) break;
   }
   return urls;

@@ -21,7 +21,7 @@ export async function fetchSnapshot(): Promise<LibrarySnapshot> {
     const page = must(
       await supabase
         .from("items")
-        .select("id, owner_id, url, title, description, note, thumbnail_url, site_name, metadata, created_at, updated_at, item_collections(collection_id)")
+        .select("id, owner_id, url, title, description, note, thumbnail_url, site_name, metadata, created_at, updated_at, item_collections(collection_id), item_files(*)")
         .order("created_at")
         .order("id")
         .range(from, from + PAGE - 1),

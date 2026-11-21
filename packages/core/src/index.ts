@@ -8,3 +8,4 @@ export * from "./export.ts";
 export * from "./local.ts";
 export * from "./native.ts";
 export * from "./icon.ts";
+export * from "./files.ts";

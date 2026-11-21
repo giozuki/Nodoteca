@@ -1,4 +1,6 @@
 import { useEffect, useRef } from "react";
+import { formatBytes } from "@nodoteca/core";
+import { useStorageUsage } from "../lib/api.ts";
 import { useI18n } from "../lib/i18n.tsx";
 import { LanguageSelect } from "./LanguageSelect.tsx";
 import { ThemeSelect } from "./ThemeSelect.tsx";
@@ -24,8 +26,9 @@ const ICON_SETTINGS = icon("M3 6.5h8m4 0h2M3 13.5h2m4 0h8M11 6.5a2 2 0 1 0 4 0 2
 
 /** The ⚙ menu in the top bar: account, library actions, preferences, sign out. */
 export function SettingsMenu({ email, online, onImport, onExport, onSignOut }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const ref = useRef<HTMLDetailsElement>(null);
+  const usage = useStorageUsage(online);
 
   const close = () => ref.current?.removeAttribute("open");
 
@@ -103,6 +106,20 @@ export function SettingsMenu({ email, online, onImport, onExport, onSignOut }: P
               <span className="menu__hint">{t("settings.exportHint")}</span>
             </span>
           </button>
+          {usage.data && usage.data.max_total_bytes > 0 && (
+            <div className="menu__row menu__row--stack menu__usage">
+              <span className="menu__usage-head">
+                <span>{t("files.usage")}</span>
+                <span className="menu__hint">
+                  {t("files.usageValue", {
+                    used: formatBytes(usage.data.used_bytes, locale),
+                    total: formatBytes(usage.data.max_total_bytes, locale),
+                  })}
+                </span>
+              </span>
+              <progress value={usage.data.used_bytes} max={usage.data.max_total_bytes} />
+            </div>
+          )}
         </div>
 
         <div className="menu__section">

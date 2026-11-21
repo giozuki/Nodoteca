@@ -18,7 +18,7 @@ await db.exec(`
   -- minimal stand-in for Supabase Storage
   create schema storage;
   create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
-  create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text);
+  create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text, metadata jsonb);
   create function storage.foldername(name text) returns text[] language sql immutable as $$ select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1] $$;
   alter table storage.objects enable row level security;
   grant usage on schema storage to authenticated;
@@ -110,3 +110,69 @@ ok(true, "storage: A can upload into own folder");
 await fails(A, `insert into storage.objects (bucket_id, name) values ('thumbnails', '${B}/abc.jpg')`, "storage: A cannot upload into B's folder");
 await fails(A, `insert into storage.objects (bucket_id, name) values ('thumbnails', 'abc.jpg')`, "storage: no uploads outside a user folder");
 ok((await as(B, `select count(*)::int c from storage.objects`)).rows[0].c === 0, "storage: B cannot see A's files");
+
+// Files
+await db.exec("reset role");
+ok((await db.query("select public from storage.buckets where id = 'files'")).rows[0]?.public === false, "files bucket exists and is private");
+const upload = (uid, path, size) => as(uid, `insert into storage.objects (bucket_id, name, metadata) values ('files', '${path}', '{"size": ${size}}')`);
+const fileJson = (path, name, extra = "") => `'[{"path": "${path}", "name": "${name}", "size": 1, "mime": "application/pdf"${extra}}]'::jsonb`;
+const sha = "a".repeat(64);
+
+await fails(A, `select save_item(null)`, "files: an item with no link and no file is rejected");
+await upload(A, `${A}/f1/report.pdf`, 1234);
+const fileItem = (await as(A, `select id from save_item(null, array['${music}']::uuid[], 'Quarterly report', p_files => ${fileJson(`${A}/f1/report.pdf`, "report.pdf", `, "sha256": "${sha}"`)})`)).rows[0].id;
+ok(!!fileItem, "files: an item with only a file is saved");
+ok((await as(A, `select size::int s from item_files where item_id='${fileItem}'`)).rows[0].s === 1234, "files: size is taken from Storage, not from the client");
+ok((await hits("report.pdf")).includes(fileItem), "files: search finds an item by file name");
+const dup = (await as(A, `select * from find_saved_file('${sha}')`)).rows;
+ok(dup.length === 1 && dup[0].collection_ids.includes(music), "files: find_saved_file finds earlier copies and their collections");
+await fails(A, `select save_item(null, p_files => ${fileJson(`${A}/missing/x.pdf`, "x.pdf")})`, "files: a file that is not in Storage is rejected");
+await upload(B, `${B}/f/secret.pdf`, 10);
+await fails(A, `select save_item(null, p_files => ${fileJson(`${B}/f/secret.pdf`, "secret.pdf")})`, "files: cannot reference a file in another user's folder");
+
+// Attachments on a link
+await upload(A, `${A}/f2/page.html`, 10);
+await upload(A, `${A}/f3/shot.png`, 20);
+const linkItem = (await as(A, `select id from save_item('https://example.com/article', '{}'::uuid[], 'Article')`)).rows[0].id;
+await as(A, `select add_item_files('${linkItem}', '[{"path": "${A}/f2/page.html", "name": "page.html"}, {"path": "${A}/f3/shot.png", "name": "shot.png", "mime": "image/png"}]'::jsonb)`);
+const att = (await as(A, `select id, name, position from item_files where item_id='${linkItem}' order by position`)).rows;
+ok(att.length === 2 && att[0].name === "page.html" && att[1].position === 1, "files: several attachments on a link, in order");
+await as(A, `select set_item_file_order('${linkItem}', array['${att[1].id}','${att[0].id}']::uuid[])`);
+ok((await as(A, `select name from item_files where item_id='${linkItem}' order by position limit 1`)).rows[0].name === "shot.png", "files: set_item_file_order reorders");
+const removed = (await as(A, `select remove_item_file('${att[0].id}') p`)).rows[0].p;
+ok(removed.length === 1 && removed[0] === `${A}/f2/page.html`, "files: remove_item_file returns the Storage path to delete");
+await as(A, `select remove_item_file('${att[1].id}')`);
+ok((await as(A, `select files_text from items where id='${linkItem}'`)).rows[0].files_text === "", "files: a link keeps working with no attachments left");
+const only = (await as(A, `select id from item_files where item_id='${fileItem}'`)).rows[0].id;
+await fails(A, `select remove_item_file('${only}')`, "files: cannot remove the last file of an item with no link");
+await fails(A, `update items set url = null where id='${linkItem}'`, "files: cannot clear the link of an item with no files");
+await fails(A, `update item_files set size = 1 where id='${only}'`, "files: size cannot be changed after the fact");
+
+// RLS
+ok((await as(B, `select count(*)::int c from item_files`)).rows[0].c === 0, "files RLS: B sees none of A's files");
+await upload(B, `${B}/g/mine.pdf`, 10);
+await fails(B, `select add_item_files('${linkItem}', ${fileJson(`${B}/g/mine.pdf`, "mine.pdf")})`, "files RLS: B cannot attach a file to A's item");
+await fails(A, `insert into storage.objects (bucket_id, name) values ('files', '${B}/x.pdf')`, "files storage: A cannot upload into B's folder");
+try { await asAnon(`select 1 from item_files limit 1`); ok(false, "anon cannot read item_files"); }
+catch (e) { ok(true, `anon cannot read item_files  -> ${e.message}`); }
+
+// Limits
+await db.exec(`reset role; insert into storage_limits (owner_id, max_file_bytes, max_total_bytes) values ('${A}', 2000, 3000)`);
+const usage = (await as(A, `select * from storage_usage()`)).rows[0];
+ok(Number(usage.used_bytes) === 1234 && Number(usage.max_total_bytes) === 3000, "limits: storage_usage reports space used and the user's own limits");
+ok(Number((await as(B, `select * from storage_usage()`)).rows[0].max_file_bytes) === 52428800, "limits: users without a row get the defaults");
+await upload(A, `${A}/big/video.mp4`, 2500);
+await fails(A, `select add_item_files('${linkItem}', ${fileJson(`${A}/big/video.mp4`, "video.mp4")})`, "limits: a file over the per-file limit is rejected");
+await upload(A, `${A}/q1/a.bin`, 1500);
+await upload(A, `${A}/q2/b.bin`, 1500);
+await as(A, `select add_item_files('${linkItem}', ${fileJson(`${A}/q1/a.bin`, "a.bin")})`);
+await fails(A, `select add_item_files('${linkItem}', ${fileJson(`${A}/q2/b.bin`, "b.bin")})`, "limits: a file that would go over the total quota is rejected");
+await db.exec(`reset role; delete from storage_limits`);
+await fails(A, `insert into storage_limits (owner_id, max_file_bytes, max_total_bytes) values ('${A}', 1, 1)`, "limits: users cannot set their own limits");
+const many = Array.from({ length: 21 }, (_, i) => `${A}/many/${i}.txt`);
+for (const p of many) await upload(A, p, 1);
+await fails(A, `select save_item('https://example.com/many', p_files => '${JSON.stringify(many.map((path, i) => ({ path, name: `${i}.txt` })))}'::jsonb)`, "limits: at most 20 files on one item");
+
+// Deleting an item takes its file rows with it.
+await as(A, `delete from items where id='${fileItem}'`);
+ok((await as(A, `select count(*)::int c from item_files where item_id='${fileItem}'`)).rows[0].c === 0, "files: deleting an item deletes its file rows");

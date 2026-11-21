@@ -37,6 +37,7 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
             <span className="muted small">{t("export.htmlHint")}</span>
           </button>
         </div>
+        <p className="muted small">{t("export.filesNote")}</p>
 
         {busy && <p className="muted">{t("export.working")}</p>}
         {state.kind === "done" && (

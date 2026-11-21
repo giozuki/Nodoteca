@@ -1,3 +1,4 @@
+import { filesOf } from "./files.ts";
 import { buildGraph } from "./graph.ts";
 import type { Collection, CollectionEdge, ItemWithCollections, Uuid } from "./types.ts";
 
@@ -28,7 +29,8 @@ export interface NodotecaExport {
   }[];
   items: {
     id: Uuid;
-    url: string;
+    /** null for an item made only of files */
+    url: string | null;
     title: string | null;
     description: string | null;
     note: string | null;
@@ -39,6 +41,11 @@ export interface NodotecaExport {
     updated_at: string;
     /** ids of the collections the item is filed in */
     collections: Uuid[];
+    /**
+     * The item's files, described but not included: the contents stay in
+     * Nodoteca's storage. Absent when the item has none.
+     */
+    files?: { name: string; size: number; mime: string; sha256: string | null }[];
   }[];
 }
 
@@ -75,6 +82,9 @@ export function buildExportJson(data: LibrarySnapshot, now = new Date()): Nodote
         created_at: i.created_at,
         updated_at: i.updated_at,
         collections: i.item_collections.map((r) => r.collection_id),
+        ...(filesOf(i).length > 0 && {
+          files: filesOf(i).map((f) => ({ name: f.name, size: f.size, mime: f.mime, sha256: f.sha256 })),
+        }),
       })),
   };
 }
@@ -86,12 +96,13 @@ const seconds = (iso: string) => Math.floor(new Date(iso).getTime() / 1000);
  * Classic bookmarks.html (importable by every browser and by Raindrop).
  * That format is a tree, so the graph is unfolded: an item filed in several
  * collections, or a collection with several parents, appears in each place.
+ * Items made only of files have no address to point to, so they are left out.
  */
 export function buildBookmarksHtml(data: LibrarySnapshot): string {
   const graph = buildGraph(data.collections, data.edges);
   const itemsIn = new Map<Uuid, ItemWithCollections[]>();
   const unfiled: ItemWithCollections[] = [];
-  const byDate = [...data.items].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const byDate = data.items.filter((i) => !!i.url).sort((a, b) => a.created_at.localeCompare(b.created_at));
   for (const item of byDate) {
     if (item.item_collections.length === 0) unfiled.push(item);
     for (const { collection_id } of item.item_collections) {
@@ -103,7 +114,8 @@ export function buildBookmarksHtml(data: LibrarySnapshot): string {
   const pad = (depth: number) => "    ".repeat(depth);
 
   const link = (item: ItemWithCollections, depth: number) => {
-    lines.push(`${pad(depth)}<DT><A HREF="${esc(item.url)}" ADD_DATE="${seconds(item.created_at)}">${esc(item.title || item.url)}</A>`);
+    const url = item.url ?? "";
+    lines.push(`${pad(depth)}<DT><A HREF="${esc(url)}" ADD_DATE="${seconds(item.created_at)}">${esc(item.title || url)}</A>`);
     const text = item.note || item.description;
     if (text) lines.push(`${pad(depth)}<DD>${esc(text.replace(/\s+/g, " ").trim())}`);
   };
