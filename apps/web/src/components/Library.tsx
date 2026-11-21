@@ -7,6 +7,7 @@ import { useI18n } from "../lib/i18n.tsx";
 import { useOnline } from "../lib/offline.ts";
 import { CollectionDialog } from "./CollectionDialog.tsx";
 import { ItemCard } from "./ItemCard.tsx";
+import { ItemDetailDialog } from "./ItemDetailDialog.tsx";
 import { ItemDialog } from "./ItemDialog.tsx";
 import { IconEdit, IconPlus } from "./Icons.tsx";
 import { CollectionIcon } from "./CollectionIcon.tsx";
@@ -28,6 +29,8 @@ export function Library({ view, onAdd }: { view: View; onAdd: AddHandler }) {
   const { graph } = useGraph();
   const [editing, setEditing] = useState<{ item: ItemWithCollections; addFiles?: File[] } | null>(null);
   const [dropping, setDropping] = useState(false);
+  // By id, so the details follow live updates (and close if the item is deleted).
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [editingCollection, setEditingCollection] = useState(false);
   const [includeSub, setIncludeSub] = useState(() => {
     try {
@@ -53,6 +56,7 @@ export function Library({ view, onAdd }: { view: View; onAdd: AddHandler }) {
   const items = useItems(scope);
   const online = useOnline();
   const thumbs = useFileThumbs(items.data, online);
+  const detail = detailId ? items.data?.find((i) => i.id === detailId) : undefined;
   const here = id ? [id] : [];
 
   // Paste a file or a screenshot anywhere (outside fields): save it as a new item here.
@@ -184,6 +188,7 @@ export function Library({ view, onAdd }: { view: View; onAdd: AddHandler }) {
             thumbs={thumbs}
             index={i}
             onEdit={() => setEditing({ item })}
+            onDetails={() => setDetailId(item.id)}
             onDropFiles={(files) => {
               setDropping(false);
               setEditing({ item, addFiles: files });
@@ -193,6 +198,18 @@ export function Library({ view, onAdd }: { view: View; onAdd: AddHandler }) {
       </div>
 
       {editing && <ItemDialog item={editing.item} addFiles={editing.addFiles} onClose={() => setEditing(null)} />}
+      {detail && (
+        <ItemDetailDialog
+          item={detail}
+          graph={graph}
+          thumbs={thumbs}
+          onClose={() => setDetailId(null)}
+          onEdit={() => {
+            setDetailId(null);
+            setEditing({ item: detail });
+          }}
+        />
+      )}
       {dropping && (
         <div className="drop-overlay" aria-hidden="true">
           {t("files.dropToSave")}

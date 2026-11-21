@@ -101,18 +101,57 @@ async function uploadObject(path: string, body: Blob, contentType: string, onPro
 
 const THUMB_SIDE = 640;
 
-/** A small preview of an image, or null if the browser can't decode it (e.g. HEIC). */
-async function makeThumbnail(file: File): Promise<Blob | null> {
-  if (fileKind(file.type) !== "image" || file.type === "image/svg+xml") return null;
+/** Draws a picture (or a video frame) at preview size and encodes it. */
+function toPreview(source: CanvasImageSource, width: number, height: number): Promise<Blob | null> {
+  const scale = Math.min(1, THUMB_SIDE / Math.max(width, height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+  canvas.getContext("2d")?.drawImage(source, 0, 0, canvas.width, canvas.height);
+  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.82));
+}
+
+/** A frame about a second in (or a tenth of the way, for short clips), or null if the browser can't play it. */
+function videoFrame(file: File): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    const src = URL.createObjectURL(file);
+    let settled = false;
+    const done = (blob: Blob | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      URL.revokeObjectURL(src);
+      video.removeAttribute("src");
+      video.load();
+      resolve(blob);
+    };
+    const timer = setTimeout(() => done(null), 10_000);
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.onerror = () => done(null);
+    video.onloadedmetadata = () => {
+      video.currentTime = Math.min(1, (video.duration || 0) / 10);
+    };
+    video.onseeked = () => {
+      if (!video.videoWidth) return done(null);
+      toPreview(video, video.videoWidth, video.videoHeight).then(done, () => done(null));
+    };
+    video.src = src;
+  });
+}
+
+/** A small preview of an image or a video, or null if the browser can't decode it (e.g. HEIC, some HEVC videos). */
+export async function makeThumbnail(file: File): Promise<Blob | null> {
+  const kind = fileKind(file.type);
   try {
+    if (kind === "video") return await videoFrame(file);
+    if (kind !== "image" || file.type === "image/svg+xml") return null;
     const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, THUMB_SIDE / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await toPreview(bitmap, bitmap.width, bitmap.height);
     bitmap.close();
-    return await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.82));
+    return blob;
   } catch {
     return null;
   }
@@ -183,23 +222,24 @@ export function hasDraggedFiles(e: { dataTransfer: DataTransfer | null }): boole
 // --- Opening -----------------------------------------------------------------
 
 /** How long a link to a file stays valid: long enough to watch a film, short for a download. */
-function expiresIn(f: ItemFile): number {
-  if (!opensInline(f.mime)) return 60;
+function expiresIn(f: ItemFile, inline: boolean): number {
+  if (!inline) return 60;
   return fileKind(f.mime) === "video" ? 4 * 3600 : 3600;
 }
 
 /**
  * Opens a file in a new tab (images, PDFs, videos) or downloads it (anything
- * else, SVG included). Call it straight from a click: the tab is opened before
- * the signed URL arrives, or popup blockers would stop it.
+ * else, SVG included, or any file with `download`). Call it straight from a
+ * click: the tab is opened before the signed URL arrives, or popup blockers
+ * would stop it.
  */
-export async function openFile(f: ItemFile): Promise<void> {
-  const inline = opensInline(f.mime);
+export async function openFile(f: ItemFile, { download = false } = {}): Promise<void> {
+  const inline = !download && opensInline(f.mime);
   const tab = inline ? window.open("", "_blank") : null;
   try {
     const { data, error } = await supabase.storage
       .from(FILES_BUCKET)
-      .createSignedUrl(f.path, expiresIn(f), inline ? undefined : { download: f.name });
+      .createSignedUrl(f.path, expiresIn(f, inline), inline ? undefined : { download: f.name });
     if (error || !data) throw error ?? new Error("no-url");
     if (tab) {
       tab.opener = null;
@@ -218,11 +258,14 @@ export async function openFile(f: ItemFile): Promise<void> {
   }
 }
 
-/** Signed URLs for the previews of these items' files, in one request. Path -> URL. */
+/**
+ * Signed URLs for the previews of these items' files, in one request. Path -> URL.
+ * Also for links with a picture of their own: the file's preview stands in if
+ * that picture fails to load.
+ */
 export function useFileThumbs(items: readonly ItemWithCollections[] | undefined, enabled: boolean): Map<string, string> {
   const paths = useMemo(
-    () =>
-      [...new Set((items ?? []).filter((i) => !i.thumbnail_url).map((i) => thumbFile(i)?.thumb_path).filter((p): p is string => !!p))].sort(),
+    () => [...new Set((items ?? []).map((i) => thumbFile(i)?.thumb_path).filter((p): p is string => !!p))].sort(),
     [items],
   );
   const query = useQuery({

@@ -8,6 +8,8 @@ interface Props {
   onSubmit?: (e: FormEvent<HTMLFormElement>) => void;
   children: ReactNode;
   footer?: ReactNode;
+  /** "sm" for short confirmations and notices. */
+  size?: "sm";
 }
 
 /**
@@ -16,7 +18,7 @@ interface Props {
  * must not end up nested inside another one (invalid HTML, and the outer form
  * can submit natively and reload the page).
  */
-export function Dialog({ title, onClose, onSubmit, children, footer }: Props) {
+export function Dialog({ title, onClose, onSubmit, children, footer, size }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const { t } = useI18n();
 
@@ -24,8 +26,9 @@ export function Dialog({ title, onClose, onSubmit, children, footer }: Props) {
     const el = ref.current;
     if (el && !el.open) {
       el.showModal();
-      // showModal focuses the first control (the close button): start on the first field instead.
-      el.querySelector<HTMLElement>("input:not([readonly]):not([type=file]):not([type=hidden]), textarea")?.focus();
+      // showModal focuses the first control (the close button): start on the element marked
+      // data-autofocus, else on the first field.
+      el.querySelector<HTMLElement>("[data-autofocus], input:not([readonly]):not([type=file]):not([type=hidden]), textarea")?.focus();
     }
     return () => el?.close();
   }, []);
@@ -46,7 +49,7 @@ export function Dialog({ title, onClose, onSubmit, children, footer }: Props) {
   return (
     <dialog
       ref={ref}
-      className="dialog"
+      className={`dialog ${size ? `dialog--${size}` : ""}`}
       onCancel={(e) => {
         e.preventDefault();
         onClose();

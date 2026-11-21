@@ -1,23 +1,23 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import {
-  attachmentsOf,
   fileExtension,
   filesOf,
   formatBytes,
   primaryFile,
   thumbFile,
   type CollectionGraph,
-  type ItemFile,
   type ItemWithCollections,
 } from "@nodoteca/core";
 import { useDeleteItem, useRefreshPreview } from "../lib/api.ts";
 import { COLLECTION_COLORS, colorFor } from "../lib/colors.ts";
-import { hasDraggedFiles, openFile } from "../lib/files.ts";
+import { hasDraggedFiles } from "../lib/files.ts";
 import { useI18n } from "../lib/i18n.tsx";
 import { useOnline } from "../lib/offline.ts";
 import { CollectionIcon } from "./CollectionIcon.tsx";
 import { IconEdit, IconPaperclip, IconRefresh, IconTrash } from "./Icons.tsx";
+import { useFileOpener } from "./ItemDetailDialog.tsx";
+import { useConfirm, useNotice } from "./Prompt.tsx";
 
 interface Props {
   item: ItemWithCollections;
@@ -25,6 +25,8 @@ interface Props {
   /** Signed URLs of file previews, by Storage path (see useFileThumbs). */
   thumbs: Map<string, string>;
   onEdit: () => void;
+  /** Show the item's details (its files, to open or download). */
+  onDetails: () => void;
   /** Files dropped on the card, to attach to this item. */
   onDropFiles?: (files: File[]) => void;
   /** Position in the list: staggers the entrance of the first few cards. */
@@ -50,23 +52,28 @@ function tintFor(host: string, first: string | undefined): string {
   return COLLECTION_COLORS[h % COLLECTION_COLORS.length]!;
 }
 
-export function ItemCard({ item, graph, thumbs, onEdit, onDropFiles, index = 0 }: Props) {
+export function ItemCard({ item, graph, thumbs, onEdit, onDetails, onDropFiles, index = 0 }: Props) {
   const { t, locale } = useI18n();
   const remove = useDeleteItem();
   const refresh = useRefreshPreview();
   const online = useOnline();
+  const confirm = useConfirm();
+  const notice = useNotice();
+  const open = useFileOpener();
   const [dropping, setDropping] = useState(false);
 
-  // A link's own picture, else the preview of one of its files (private, signed URL).
-  const fileThumb = thumbFile(item)?.thumb_path;
-  const thumbSrc = item.thumbnail_url ?? (fileThumb ? thumbs.get(fileThumb) : undefined) ?? null;
-
-  // Images that failed while offline get another chance once the connection is back.
+  // Pictures that failed to load. Offline failures get another chance once the connection is back.
+  const [broken, setBroken] = useState<ReadonlySet<string>>(() => new Set());
   useEffect(() => {
-    if (online) setBrokenThumb(null);
+    if (online) setBroken(new Set());
   }, [online]);
-  const [brokenThumb, setBrokenThumb] = useState<string | null>(null);
-  const showThumb = !!thumbSrc && brokenThumb !== thumbSrc;
+  const usable = (src: string | null | undefined): src is string => !!src && !broken.has(src);
+
+  // The link's own picture; if it has none (or it fails), the preview of one of its files.
+  const fileThumb = thumbFile(item)?.thumb_path;
+  const fileThumbUrl = fileThumb ? thumbs.get(fileThumb) : undefined;
+  const thumbSrc = usable(item.thumbnail_url) ? item.thumbnail_url : usable(fileThumbUrl) ? fileThumbUrl : null;
+  const showThumb = !!thumbSrc;
   // Portrait or square pictures are shown whole, over a blurred copy of themselves.
   const [tallThumb, setTallThumb] = useState<string | null>(null);
   const fitThumb = showThumb && tallThumb === thumbSrc;
@@ -76,8 +83,9 @@ export function ItemCard({ item, graph, thumbs, onEdit, onDropFiles, index = 0 }
   };
 
   const primary = primaryFile(item);
-  const attachments = attachmentsOf(item);
   const fileCount = filesOf(item).length;
+  // A link shows its files as a badge; an item made of one file already says so in its meta line.
+  const showBadge = item.url ? fileCount > 0 : fileCount > 1;
   const host = item.url ? hostOf(item.url) : null;
   const kindLabel = primary ? fileExtension(primary.name) || t("files.file") : "";
   const site = item.url ? item.site_name || host! : primary ? `${kindLabel} · ${formatBytes(primary.size, locale)}` : "";
@@ -89,17 +97,22 @@ export function ItemCard({ item, graph, thumbs, onEdit, onDropFiles, index = 0 }
   const tint = tintFor(host ?? primary?.name ?? "", collections[0] && colorFor(collections[0].name, collections[0].color));
   const label = item.title || item.url || primary?.name || t("item.untitled");
 
-  const open = (f: ItemFile) => {
-    if (!online) return alert(t("files.offline"));
-    openFile(f).catch(() => alert(t("files.openFailed")));
-  };
+  async function destroy() {
+    const ok = await confirm({
+      title: fileCount > 0 ? t("item.deleteTitleFiles") : t("item.deleteTitle"),
+      message: fileCount > 0 ? t("item.deleteMessageFiles") : t("item.deleteMessage"),
+      confirmLabel: t("common.delete"),
+      danger: true,
+    });
+    if (ok) remove.mutate(item);
+  }
 
   const thumbInner: ReactNode = showThumb ? (
     <>
-      {fitThumb && <img className="card__thumb-backdrop" src={thumbSrc!} alt="" referrerPolicy="no-referrer" />}
+      {fitThumb && <img className="card__thumb-backdrop" src={thumbSrc} alt="" referrerPolicy="no-referrer" />}
       <img
         className={fitThumb ? "card__thumb-fit" : undefined}
-        src={thumbSrc!}
+        src={thumbSrc}
         alt=""
         loading="lazy"
         referrerPolicy="no-referrer"
@@ -108,7 +121,7 @@ export function ItemCard({ item, graph, thumbs, onEdit, onDropFiles, index = 0 }
           if (img?.complete) measureThumb(img);
         }}
         onLoad={(e) => measureThumb(e.currentTarget)}
-        onError={() => setBrokenThumb(thumbSrc)}
+        onError={() => setBroken((b) => new Set(b).add(thumbSrc))}
       />
     </>
   ) : (
@@ -153,6 +166,18 @@ export function ItemCard({ item, graph, thumbs, onEdit, onDropFiles, index = 0 }
           {thumbInner}
         </button>
       )}
+      {showBadge && (
+        <button
+          type="button"
+          className="card__badge"
+          onClick={onDetails}
+          aria-label={t("files.attachedCount", { count: fileCount })}
+          title={t("files.attachedCount", { count: fileCount })}
+        >
+          <IconPaperclip s={14} />
+          <span>{fileCount}</span>
+        </button>
+      )}
       <div className="card__body">
         <p className="card__meta">
           <span className="card__site">{site}</span>
@@ -168,23 +193,6 @@ export function ItemCard({ item, graph, thumbs, onEdit, onDropFiles, index = 0 }
           </button>
         )}
         {item.note && <p className="card__note">{item.note}</p>}
-        {attachments.length > 0 && (
-          <ul className="card__chips card__files">
-            {attachments.map((f) => (
-              <li key={f.id}>
-                <button
-                  type="button"
-                  className="chip chip--link chip--file"
-                  title={`${f.name} · ${formatBytes(f.size, locale)}`}
-                  onClick={() => open(f)}
-                >
-                  <IconPaperclip s={13} />
-                  <span className="chip__label">{f.name}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
         {collections.length > 0 && (
           <ul className="card__chips">
             {collections.map((c) => (
@@ -207,8 +215,8 @@ export function ItemCard({ item, graph, thumbs, onEdit, onDropFiles, index = 0 }
                 disabled={refresh.isPending}
                 onClick={() =>
                   refresh.mutate(item, {
-                    onSuccess: () => setBrokenThumb(null),
-                    onError: () => alert(t("item.previewFailed")),
+                    onSuccess: () => setBroken(new Set()),
+                    onError: () => void notice({ title: t("item.previewFailedTitle"), message: t("item.previewFailed") }),
                   })
                 }
               >
@@ -223,9 +231,7 @@ export function ItemCard({ item, graph, thumbs, onEdit, onDropFiles, index = 0 }
               aria-label={t("item.delete")}
               title={t("item.delete")}
               disabled={remove.isPending}
-              onClick={() => {
-                if (confirm(fileCount > 0 ? t("item.deleteConfirmFiles") : t("item.deleteConfirm"))) remove.mutate(item);
-              }}
+              onClick={() => void destroy()}
             >
               <IconTrash s={16} />
             </button>

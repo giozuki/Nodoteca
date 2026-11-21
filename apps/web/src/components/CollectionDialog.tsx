@@ -7,6 +7,7 @@ import { errorCode } from "../lib/supabase.ts";
 import { CollectionPicker } from "./CollectionPicker.tsx";
 import { CollectionIcon } from "./CollectionIcon.tsx";
 import { Dialog } from "./Dialog.tsx";
+import { useConfirm } from "./Prompt.tsx";
 
 // Ten rows of eight, by theme: reading, work, tech, design, media, food, travel, sport, nature, everything else.
 const EMOJI = [
@@ -26,6 +27,7 @@ interface Props {
 
 export function CollectionDialog({ collection, initialParentIds = [], onClose, onDeleted }: Props) {
   const { t } = useI18n();
+  const confirm = useConfirm();
   const { graph } = useGraph();
   const create = useCreateCollection();
   const update = useUpdateCollection();
@@ -57,7 +59,14 @@ export function CollectionDialog({ collection, initialParentIds = [], onClose, o
   }
 
   async function destroy() {
-    if (!collection || !confirm(t("collection.deleteConfirm", { name: collection.name }))) return;
+    if (!collection) return;
+    const ok = await confirm({
+      title: t("collection.deleteTitle", { name: collection.name }),
+      message: t("collection.deleteMessage"),
+      confirmLabel: t("common.delete"),
+      danger: true,
+    });
+    if (!ok) return;
     await remove.mutateAsync(collection.id);
     onDeleted?.();
     onClose();
