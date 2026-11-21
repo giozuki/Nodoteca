@@ -9,7 +9,7 @@ flowchart LR
     E[Chrome extension<br/>apps/extension]
   end
   C[[packages/core<br/>types · URL helpers]]
-  S[(Supabase<br/>Postgres · Auth · Realtime)]
+  S[(Supabase<br/>Postgres · Auth · Realtime · Storage)]
 
   W --- C
   E --- C
@@ -29,13 +29,14 @@ writes the same rows, and Supabase Realtime pushes changes to open clients.
 ```mermaid
 erDiagram
   ITEMS ||--o{ ITEM_COLLECTIONS : "is filed in"
+  ITEMS ||--o{ ITEM_FILES : "has"
   COLLECTIONS ||--o{ ITEM_COLLECTIONS : "contains"
   COLLECTIONS ||--o{ COLLECTION_EDGES : "parent of"
   COLLECTIONS ||--o{ COLLECTION_EDGES : "child of"
 
   ITEMS {
     uuid id PK
-    text url "not unique"
+    text url "not unique, optional"
     text title
     text note
     jsonb metadata
@@ -43,6 +44,13 @@ erDiagram
   COLLECTIONS {
     uuid id PK
     text name "unique per user"
+  }
+  ITEM_FILES {
+    uuid id PK
+    uuid item_id FK
+    text path "in the files bucket"
+    text name
+    bigint size
   }
   ITEM_COLLECTIONS {
     uuid item_id FK
@@ -63,6 +71,7 @@ erDiagram
 | **Collections form a graph (DAG), not a tree** | A collection can have several parents, so "Movie Z" can sit under both *Movies* and *Soundtracks* without being copied. A trigger rejects cycles. |
 | **Collection names are unique per user** | A name *is* the node. "Rock" reached from two parents is the same "Rock". |
 | **`owner_id` on join tables** | Keeps RLS policies simple and fast; `with check` also verifies both ends belong to the user. |
+| **A link, files, or both** | An item usually is a link. Files attached to it keep a copy of what it points to, in case the page changes or disappears; an item can also be made only of files. A deferred constraint trigger makes sure every item has a URL or at least one file. |
 | **Full-text search in Postgres** | A generated `tsvector` (title > note > description > site/URL) plus a trigram index on titles. No extra search service. |
 
 ### RPCs
@@ -74,9 +83,42 @@ erDiagram
 | `set_item_collections(p_item_id, p_collection_ids[])` | Replaces the whole set of collections of an item, atomically. |
 | `set_collection_parents(p_collection_id, p_parent_ids[])` | Replaces the parents of a collection; the cycle trigger still applies. |
 | `collection_counts()` | Number of items directly inside each collection, for the sidebar. |
+| `save_item(..., p_files)` | Also records files already uploaded to Storage, in the same transaction. |
+| `add_item_files(p_item_id, p_files)` / `remove_item_file(p_file_id)` | Attach or forget files; `remove_item_file` returns the Storage paths to delete. |
+| `set_item_file_order(p_item_id, p_file_ids[])` | Reorders an item's files (the first opens from the card when there is no link). |
+| `find_saved_file(p_sha256)` | Earlier saves of the same content, for the "already saved in A, B" hint. |
+| `storage_usage()` | Space used by the user's files and the limits that apply to them. |
 
 URLs are normalized on the client (`normalizeUrl` in `packages/core`) before
 `save_item` and `find_saved`, so `youtu.be/x?si=…` and `youtube.com/watch?v=x` match.
+
+## Files
+
+Files live in a **private** Storage bucket, `files`, under
+`<user id>/<random folder>/<safe file name>`; the original name is kept in
+`item_files.name`. Storage policies let each user touch only their own folder.
+
+1. The web app hashes the file (SHA-256, for the duplicate hint), uploads it
+   with the user's JWT, and for images also uploads a small WebP preview in the
+   same folder (`thumb_path`).
+2. `save_item` / `add_item_files` record it. A trigger checks that the object
+   really exists, takes its **size from Storage** (not from the client), and
+   enforces the limits. If recording fails, the client deletes the upload.
+3. Files open through **signed URLs** that expire: 1 minute for downloads,
+   1 hour for images and PDFs, 4 hours for videos. Only images, PDFs and videos
+   open in a tab; everything else (SVG included, since it can carry scripts) is
+   downloaded.
+4. Deleting an item or a file removes the row first, then the objects: a
+   failure leaves an unreachable object behind, never a row without its file.
+
+**Limits** are data, not code: defaults of 50 MB per file and 800 MB in all
+(`storage_limits_for()`), overridden per user by a row in `storage_limits`
+that only the project owner can write. The bucket's own `file_size_limit`
+(50 MB, the most Supabase's free plan accepts per upload) is the ceiling
+above every per-user limit. At most 20 files per item.
+
+The JSON export describes files (name, size, type, hash) but does not contain
+them, and the offline copy shows them without being able to open them.
 
 ## Link previews
 

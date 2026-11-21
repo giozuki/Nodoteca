@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>Una libreria di link in cui un link può stare in tante raccolte.</b><br>
+  <b>Una libreria web personale in cui un link può stare in tante raccolte.</b><br>
   Salvi un link una volta e lo metti in tutti gli argomenti a cui appartiene.<br>
   Duplicati ammessi. Le raccolte possono avere più di un genitore. Sincronizzazione su tutti i tuoi dispositivi.
 </p>
@@ -53,10 +53,11 @@ vuoi. Anche le raccolte sono nodi, quindi possono avere più di un genitore.
 | 🕸️ **Più raccolte per link** | Metti un link in tutti gli argomenti che tocca. Resta un unico link: lo modifichi una volta e la modifica si vede ovunque. |
 | 🧬 **Raccolte con più genitori** | "Film Z" può stare sia sotto *Film* sia sotto *Colonne sonore*. I cicli vengono bloccati in automatico. |
 | ♻️ **Duplicati ammessi** | Se vuoi, puoi salvare di nuovo lo stesso URL. Nodoteca ti avvisa soltanto: *"già salvato in A, B"*. |
+| 📎 **Conservi una copia** | Allega il PDF, l'immagine o il video a cui punta un link: resta tuo anche se la pagina cambia o sparisce. Puoi anche salvare un file da solo, con titolo, note e raccolte, come un link. |
 | 🔄 **Sincronizzazione ovunque** | Un account per tutti i dispositivi. Le modifiche compaiono in tempo reale. |
-| 🔎 **Ricerca per frammenti** | Basta un pezzo di parola: "anthr" trova "Anthropic". Cerca in titoli, note, siti e URL. |
+| 🔎 **Ricerca per frammenti** | Basta un pezzo di parola: "anthr" trova "Anthropic". Cerca in titoli, note, siti, URL e nomi dei file. |
 | 📲 **Salvi da ovunque** | Installala come app, condividi i link da qualsiasi app Android, o salva la scheda aperta con l'estensione Chrome. |
-| 🔒 **Privato di default** | Row Level Security su Postgres: i tuoi dati li vedi solo tu. |
+| 🔒 **Privato di default** | Row Level Security su Postgres: i tuoi dati li vedi solo tu. I file stanno in uno spazio privato e si aprono con link che scadono. |
 | 🌍 **Multilingua** | Inglese e italiano per cominciare; per aggiungere una lingua basta un file. |
 | 🌗 **Chiaro e scuro** | Segue il sistema, oppure scegli tu. |
 
@@ -126,7 +127,8 @@ npm test               # test del core e del database
 - [x] **Fase 4 · Importazione:** da Raindrop.io (CSV / HTML) e dai segnalibri del browser
 - [x] **Fase 5 · Rifinitura:** export completo e backup, modalità offline (sola lettura)
 - [x] **Fase 6 · Formato di importazione nativo:** un formato JSON semplice e documentato (raccolte per nome, più genitori, niente id) che tu o un LLM potete scrivere partendo da qualsiasi export, ad esempio per riorganizzare un export di Raindrop prima di importarlo
-- [ ] **Fase 7 · Classificazione intelligente:** raccolte suggerite in base a canzone, artista e film
+- [x] **Fase 7 · File:** allegati a un link (PDF, immagini, video…) o file salvati da soli; spazio privato con limiti per utente
+- [ ] **Fase 8 · Classificazione intelligente:** raccolte suggerite in base a canzone, artista e film
 
 <sub>Non pianificato, solo annotato: cosa servirebbe [se un giorno Nodoteca aprisse al pubblico](docs/going-public.md) (in inglese).</sub>
 

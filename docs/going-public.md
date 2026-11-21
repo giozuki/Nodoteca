@@ -21,6 +21,31 @@ use the same instance. Nothing here is urgent while it stays personal.
   leaves its file behind. Remove files when the last item using them is
   deleted (trigger + Edge Function, or a periodic sweep).
 
+- [ ] **Enforce the file quota at upload time.**
+  The quota is checked when a file is *recorded* (`item_files_validate()`),
+  not when it is uploaded: someone calling the Storage API directly could fill
+  their folder without recording anything. Fine for one person; with strangers,
+  upload through an Edge Function (or a signed upload URL issued after a quota
+  check) and sweep objects that no row points to.
+
+- [ ] **Clean up orphaned files.**
+  A save that fails half-way, or a deleted account, can leave objects in the
+  `files` bucket that no row points to (deleting a user removes their rows by
+  cascade, not their Storage objects). Add a periodic sweep, and delete the
+  user's folder when the account is deleted.
+
+- [ ] **Hosting other people's files.**
+  Storing uploads means handling illegal content, copyright notices
+  (DMCA-style takedowns) and data-protection requests (GDPR: export and
+  erasure of files too). Needs a reporting channel, terms of use and a way to
+  remove a file on request before anyone else can upload.
+
+- [ ] **Storage plans.**
+  Limits already live in `storage_limits` (per user, read-only for users), so
+  paid tiers are rows, not code. Above 50 MB per file the bucket's
+  `file_size_limit` and the Supabase plan (Pro) must change too. Watch egress:
+  every view of a video downloads it again.
+
 - [ ] **Send auth emails from our own domain.**
   Sign-in emails currently go through a personal Gmail account (custom SMTP):
   fine for one person (~500 emails/day), not for strangers, and Supabase warns

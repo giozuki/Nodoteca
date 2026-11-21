@@ -2,7 +2,7 @@
   "name": "nodoteca",
   "private": true,
   "version": "0.1.0",
-  "description": "A link library where one link can live in many collections.",
+  "description": "A personal web library where one link can live in many collections.",
   "license": "MIT",
   "type": "module",
   "workspaces": [

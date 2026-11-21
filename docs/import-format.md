@@ -93,4 +93,7 @@ Existing collections with the same name are reused, never duplicated.
 
 - **Raindrop.io** CSV export
 - **Browser bookmarks** (`bookmarks.html` from Chrome, Firefox, Edge, Safari)
-- **Nodoteca backups** made with *Export → Complete backup (JSON)*
+- **Nodoteca backups** made with *Export → Complete backup (JSON)*.
+  Files are not restored: a backup only describes them (name, size, type), so
+  items made only of files are skipped and links come back without their
+  attachments.

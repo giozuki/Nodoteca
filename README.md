@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>A link library where one link can live in many collections.</b><br>
+  <b>A personal web library where one link can live in many collections.</b><br>
   Save a link once and file it under every topic it belongs to.<br>
   Duplicates are allowed. Collections can have more than one parent. Syncs across your devices.
 </p>
@@ -53,10 +53,11 @@ one parent.
 | 🕸️ **Many collections per link** | File a link under every topic it touches. It's still one link: edit it once and the change shows up everywhere. |
 | 🧬 **Collections with many parents** | "Movie Z" can live under both *Movies* and *Soundtracks*. Cycles are blocked automatically. |
 | ♻️ **Duplicates allowed** | Save the same URL again if you want to. Nodoteca only warns you: *"already saved in A, B"*. |
+| 📎 **Keep a copy** | Attach the PDF, picture or video behind a link, so it stays yours even if the page changes or disappears. A file can also be saved on its own, with a title, notes and collections, like a link. |
 | 🔄 **Sync everywhere** | One account, every device. Changes show up in real time. |
-| 🔎 **Search as you think** | Type any part of a word: "anthr" finds "Anthropic". Searches titles, notes, sites and URLs. |
+| 🔎 **Search as you think** | Type any part of a word: "anthr" finds "Anthropic". Searches titles, notes, sites, URLs and file names. |
 | 📲 **Save from anywhere** | Install it as an app, share links to it from any Android app, or save the current tab with the Chrome extension. |
-| 🔒 **Private by default** | Row Level Security in Postgres: you are the only one who can see your data. |
+| 🔒 **Private by default** | Row Level Security in Postgres: you are the only one who can see your data. Files sit in a private bucket and open through links that expire. |
 | 🌍 **Multilingual** | English and Italian to start, and adding a language means adding one file. |
 | 🌗 **Light and dark** | Follows your system, or pick one. |
 
@@ -126,7 +127,8 @@ npm test               # core + database tests
 - [x] **Phase 4 · Import:** from Raindrop.io (CSV / HTML) and browser bookmarks
 - [x] **Phase 5 · Polish:** full export and backup, offline mode (read-only)
 - [x] **Phase 6 · Native import format:** a simple, documented JSON format (collections by name, several parents, no ids) that you or an LLM can write from any export, e.g. to reorganize a Raindrop export before importing it
-- [ ] **Phase 7 · Smart filing:** collection suggestions from song, artist and movie metadata
+- [x] **Phase 7 · Files:** attach copies to a link (PDF, pictures, videos…) or save a file on its own; private storage with per-user limits
+- [ ] **Phase 8 · Smart filing:** collection suggestions from song, artist and movie metadata
 
 <sub>Not planned, just noted: what would need work [if Nodoteca ever opens to the public](docs/going-public.md).</sub>
 
