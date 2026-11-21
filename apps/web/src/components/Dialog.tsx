@@ -8,7 +8,10 @@ interface Props {
   onSubmit?: (e: FormEvent<HTMLFormElement>) => void;
   children: ReactNode;
   footer?: ReactNode;
-  /** "sm" for short confirmations and notices. */
+  /**
+   * "sm" for short confirmations and notices. Only changes the desktop width
+   * (--dialog-max in styles.css); on phones every dialog is a full-width sheet.
+   */
   size?: "sm";
 }
 
